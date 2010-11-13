@@ -1,3 +1,4 @@
+
 #include "lispobj.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,12 +7,24 @@
 
 
 /* cell */
-void *get_val(cell *c, int i)
+/*@out@*/
+static void *get_val(cell *c, int i)
 {
-   return c->value[i];
+   if(c == NULL)
+   {
+      fprintf(stderr, "get_val(): cell is NULL\n");
+      abort();
+   }
+   if(!(0 <= i &&i < NUM_OF_VALUES))
+   {
+      fprintf(stderr, "get_val(): index error\n");
+      abort();
+   }
+   return c->value[i];   
 }
 
-void *set_val(cell *c, int i, lispobj *obj)
+/*@null@*/
+static void *set_val(cell *c, int i, lispobj *obj)
 {
    void *result = NULL;
    if(is_cell(c))
@@ -26,26 +39,31 @@ void *set_val(cell *c, int i, lispobj *obj)
    return result;
 }
 
+/*@null@*/
 void *car(cell *c)
 {
    return get_val(c, 0);
 }
 
+/*@null@*/
 void *cdr(cell *c)
 {
    return get_val(c, 1);
 }
 
+/*@null@*/
 void *set_car(cell *c, void *obj)
 {
    return set_val(c, 0, obj);
 }
 
+/*@null@*/
 void *set_cdr(cell *c, void *obj)
 {
    return set_val(c, 1, obj);
 }
 
+/*@null@*/
 cell *cons(void *l, void *r)
 {
    cell *c = (cell *)malloc(sizeof(cell));
@@ -55,14 +73,14 @@ cell *cons(void *l, void *r)
    return c;
 }
 
-int is_cell(lispobj *obj)
+bool is_cell(lispobj *obj)
 {
    return obj == NULL ? 0 :obj->tid == CELL;
 }
 
-int equal_cell(cell *l, cell* r)
+bool equal_cell(cell *l, cell* r)
 {
-   int result = 0;
+   bool result = false;
    if(is_cell(l) && is_cell(r))
    {
       result = 
@@ -87,29 +105,30 @@ symbol *new_symbol(char *name)
    return s;
 }
 
-int is_symbol(lispobj *l)
+bool is_symbol(lispobj *l)
 {
    return l == NULL ? 0 : l->tid == SYMBOL;
 }
 
-int equal_symbol(symbol *l, symbol *r)
+bool equal_symbol(symbol *l, symbol *r)
 {
-   int result = 0;
+   bool result = 0;
    if(is_symbol(l) && is_symbol(r))
    {
       result = 
-         strcmp(sym_to_chars(l), sym_to_chars(r)) == 0;
+         strcmp(sym_to_string(l), sym_to_string(r)) == 0;
    }
    return result;
 }
 
-char *sym_to_chars(symbol *s)
+/*@null@*/
+char *sym_to_string(symbol *s)
 {
    return (char *)(s->value[0]);
 }
 
 /* integer */
-
+/*@null@*/
 integer *new_integer(int x)
 {
    integer *i = (integer*)malloc(sizeof(integer));
@@ -120,7 +139,7 @@ integer *new_integer(int x)
    return i;
 }
 
-int is_integer(integer *i)
+bool is_integer(integer *i)
 {
    return i == NULL ? 0 : i->tid == INTEGER;
 }
@@ -130,9 +149,9 @@ int integer_to_int(integer *i)
    return *(int *)(i->value[0]);
 }
 
-int equal_integer(integer *l, integer *r)
+bool equal_integer(integer *l, integer *r)
 {
-   int result = 0;
+   bool result = 0;
    if(is_integer(l) && is_integer(r))
    {
       result = integer_to_int(l) == integer_to_int(r);
@@ -141,7 +160,7 @@ int equal_integer(integer *l, integer *r)
 }
 
 /* char */
-
+/*@null@*/
 character *new_character(char c)
 {
    character *chrctr = (character*)malloc(sizeof(character));
@@ -153,12 +172,12 @@ character *new_character(char c)
    return chrctr;
 }
 
-int is_character(character *c)
+bool is_character(character *c)
 {
    return c->tid == CHARACTER;
 }
 
-int equal_character(character *l, character *r)
+bool equal_character(character *l, character *r)
 {
    return (is_character(l) && is_character(r)) && 
       ((*(char*)(l->value[0])) == (*(char*)(r->value[0])));
@@ -171,12 +190,12 @@ char character_to_char(character *c)
 
 /* list */
 
-int is_list(lispobj *obj)
+bool is_list(lispobj *obj)
 {
-   int result = 0;
+   bool result = false;
    if(obj == NULL)
    {
-      result = 1;
+      result = true;
    }
    else if(is_cell(obj))
    {
@@ -185,6 +204,7 @@ int is_list(lispobj *obj)
    return result;
 }
 
+/*@null@*/
 cell *assoc(symbol *s, list *l)
 {
    cell *result = NULL;
@@ -210,6 +230,7 @@ int list_length(list *l)
 }
 
 /* string */
+/*@null@*/
 string *new_string(char *s)
 {
    char *i = s;
@@ -234,12 +255,12 @@ string *new_string(char *s)
    return result;
 }
 
-int is_string(lispobj *s)
+bool is_string(lispobj *s)
 {
-   int result = 0;
+   bool result = false;
    if(s == NULL)
    {
-      result = 1;
+      result = true;
    }
    else if(is_character(s))
    {
@@ -247,17 +268,17 @@ int is_string(lispobj *s)
    }
    else
    {
-      result = 0;
+      result = false;
    }
    return result;
 }
 
-int equal_string(string *l, string *r)
+bool equal_string(string *l, string *r)
 {
-   int result = 0;
+   bool result = false;
    if(l == NULL && r == NULL)
    {
-      result = 1;
+      result = true;
    }
    else if( l != NULL && r != NULL)
    {
@@ -268,6 +289,8 @@ int equal_string(string *l, string *r)
    }
    return result;
 }
+
+/*@null@*/
 char *string_to_chars(string *l)
 {
    int len = list_length(l);
@@ -286,19 +309,19 @@ char *string_to_chars(string *l)
 }
 
 /* generic equal */
-int (*equalf_pointers[NUM_OF_TYPES])(lispobj *, lispobj *)
+bool (*equalf_pointers[NUM_OF_TYPES])(lispobj *, lispobj *)
  = {NULL};
 
-void init_equal_func()
+static void init_equal_func()
 {
    equalf_pointers[SYMBOL] = equal_symbol;
    equalf_pointers[CELL] = equal_cell;
    equalf_pointers[INTEGER] = equal_integer;
 }
 
-int equal(lispobj *l, lispobj *r)
+bool equal(lispobj *l, lispobj *r)
 {
-   int result = 0;
+   bool result = false;
    if(equalf_pointers[0] == NULL)
    {
       init_equal_func();
@@ -306,11 +329,11 @@ int equal(lispobj *l, lispobj *r)
 
    if(l == r)
    {
-      result = 1;
+      result = true;
    }
    else if(l == NULL || r == NULL)
    {
-      result = 0;
+      result = false;
    }
    else
    {
@@ -321,7 +344,8 @@ int equal(lispobj *l, lispobj *r)
 }
 
 /* environment */
-list *new_frame(list *vars, list *vals)
+/*@null@*/
+static list *new_frame(list *vars, list *vals)
 {
    list *result = NULL;
    if(vars != NULL && vals != NULL)
@@ -332,12 +356,14 @@ list *new_frame(list *vars, list *vals)
    return result;
 }
 
+/*@null@*/
 environment *extend_env(
    list *vars, list *vals, environment *env)
 {
    return cons(new_frame(vars, vals), env);
 }
 
+/*@null@*/
 environment *define_var_val(
    symbol *var, lispobj *val, environment *env)
 {
@@ -357,6 +383,7 @@ environment *define_var_val(
    return env;
 }
 
+/*@null@*/
 cell *lookup_var_val(symbol *var, environment *env)
 {
    cell *result = NULL;
@@ -371,6 +398,7 @@ cell *lookup_var_val(symbol *var, environment *env)
    return result;
 }
 
+/*@null@*/
 environment *set_var_val(
    symbol *var, lispobj *val, environment* env)
 {
@@ -382,7 +410,8 @@ environment *set_var_val(
    return env;
 }
 
-environment *init_env()
+/*@null@*/
+environment *new_env()
 {
    symbol *begin = new_symbol("begin");
    symbol *define = new_symbol("define");
@@ -416,6 +445,7 @@ environment *init_env()
 }
 
 /* eval */
+/*@null@*/
 list *list_of_values(list *exps, environment *env)
 {
    list *result = NULL;
@@ -427,6 +457,7 @@ list *list_of_values(list *exps, environment *env)
    return result;
 }
 
+/*@null@*/
 lispobj *eval(lispobj *exp, environment *env)
 {
    lispobj *result;
@@ -455,7 +486,8 @@ lispobj *eval(lispobj *exp, environment *env)
    }
    else if(is_symbol(exp))
    {
-      result = cdr(lookup_var_val(exp, env));
+      lispobj *obj = lookup_var_val(exp, env);
+      result = cdr(obj);
    }
    else if(is_list(exp))
    {
@@ -489,7 +521,7 @@ lispobj *eval(lispobj *exp, environment *env)
    return result;
 }
 
-
+/*@null@*/
 lispobj *apply_prim_proc(prim_proc *proc, list *arg)
 {
    lispobj *(*p)(list *) = proc->value[0];
@@ -514,6 +546,7 @@ int plus_integers_to_int(list *integers)
    return result;
 }
 
+/*@null@*/
 integer *proc_plus_integer(list *integers)
 {
    int result = 0;
@@ -534,6 +567,7 @@ int is_prim_proc(lispobj *obj)
    return obj->tid == PRIM_PROC;
 }
 
+/*@null@*/
 prim_proc *new_prim_proc(lispobj *(*p)(list *))
 {
    prim_proc *proc = (prim_proc*)malloc(sizeof(prim_proc));
@@ -543,6 +577,7 @@ prim_proc *new_prim_proc(lispobj *(*p)(list *))
    return proc;
 }
 
+/*@null@*/
 syntax *new_syntax(lispobj *(*p)(list *,environment *))
 {
    syntax *s = (syntax *)malloc(sizeof(syntax));
@@ -557,6 +592,7 @@ int is_syntax(lispobj *obj)
    return obj->tid == SYNTAX;
 }
 
+/*@null@*/
 lispobj *eval_syntax(syntax *s, list *exp, environment *env)
 {
    lispobj *(*evaluate)(list *, environment *);
@@ -564,6 +600,7 @@ lispobj *eval_syntax(syntax *s, list *exp, environment *env)
    return evaluate(exp, env);
 }
 
+/*@null@*/
 lispobj *syntax_quote(list *exp, environment *env)
 {
    lispobj *result = NULL;
@@ -578,6 +615,7 @@ lispobj *syntax_quote(list *exp, environment *env)
    return result;
 }
 
+/*@null@*/
 lispobj *syntax_begin(list *exp, environment *env)
 {
    lispobj* result = NULL;
@@ -597,6 +635,7 @@ lispobj *syntax_begin(list *exp, environment *env)
    return result;
 }
 
+/*@null@*/
 lispobj *syntax_define(list *exp, environment *env)
 {
    lispobj *var = car(exp);
@@ -605,13 +644,14 @@ lispobj *syntax_define(list *exp, environment *env)
    return NULL;
 }
 
+/*@null@*/
 lispobj *syntax_lambda(list *exp, environment *env)
 {
    return new_lambda(exp, env);
 }
 
-
 /* lambda */
+/*@null@*/
 lambda *new_lambda(list *arg_body, environment *env)
 {
    lambda *l = (lambda *)malloc(sizeof(lambda));
@@ -621,6 +661,7 @@ lambda *new_lambda(list *arg_body, environment *env)
    return l;
 }
 
+/*@null@*/
 lispobj *apply_lambda(lambda *l, list *vals)
 {
    list *vars = car((list*)(l->value[0]));
@@ -630,14 +671,15 @@ lispobj *apply_lambda(lambda *l, list *vals)
    return syntax_begin(body, env);
 }
 
-int is_lambda(lispobj *l)
+bool is_lambda(lispobj *l)
 {
    return l->tid == LAMBDA;
 }
 
+/*@null@*/
 char *new_word(char *head, char *tail)
 {
-   int wordlength = ((tail - head)/ sizeof(char)) + 1;
+   int wordlength = (tail - head)/ sizeof(char);
    int wordsize = (wordlength + 1) * sizeof(char);
    char *word = NULL;
    int i;
@@ -655,19 +697,23 @@ char *new_word(char *head, char *tail)
    return word;
 }
 
+/*@null@*/
 char *wordtail(char *exp)
 {
    if(exp[0] == ' ' || exp[0] == '\0')
    {
       return NULL;
    }
-   else if(exp[1] == ' ' || exp[1] == '\0')
+   else if(
+      exp[1] == ' ' || 
+      exp[1] == '\0'||
+      exp[1] == '(' ||
+      exp[1] == ')')
    {
       return exp;
    }
    return wordtail(++exp);
 }   
-
 
 list *tokenize(char *exp)
 {
@@ -679,13 +725,13 @@ list *tokenize(char *exp)
       case '\0':
          break;
       case ' ':
-         result = tokenize(++exp);
+         result = tokenize(exp + 1);
          break;
       case '(':
-         result = cons("(", tokenize(++exp));
+         result = cons("(", tokenize(exp + 1));
          break;
       case ')':
-         result = cons(")", tokenize(++exp));
+         result = cons(")", tokenize(exp + 1));
          break;
       default:
          tail = wordtail(exp);
@@ -707,3 +753,207 @@ int print_token(list *tokens)
    }
    return 1;
 }
+
+int delete_tokens(list *tokens)
+{
+   char *s = NULL;
+   if(tokens != NULL)
+   {
+      s = car(tokens);
+      if(s[0] != '(' && s[0] != ')')
+      {
+         free(s);
+      }
+      delete_tokens(cdr(tokens));
+      free(tokens);
+   }
+   return 1;
+}
+
+list *close_token(list *tokens, int count)
+{
+   list *result = NULL;
+   char *s = NULL;
+
+   if(tokens != NULL && 0 <= count)
+   {
+      s = car(tokens);
+      if(s[0] == ')')
+      {
+         int crnt_count = count -1;
+         if(crnt_count == 0)
+         {
+            result = tokens;
+         }
+         else
+         {
+            result = close_token(cdr(tokens), crnt_count);
+         }
+      }
+      else if(s[0] == '(')
+      {
+         result = close_token(cdr(tokens), count + 1);
+      }
+      else
+      {
+         result = close_token(cdr(tokens), count);
+      }
+   }
+   return result;
+}
+
+bool char_is_num(char c)
+{
+   return (
+      c == '1' ||
+      c == '2' ||
+      c == '3' ||
+      c == '4' ||
+      c == '5' ||
+      c == '6' ||
+      c == '7' ||
+      c == '8' ||
+      c == '9' ||
+      c == '0' );
+}
+
+bool string_is_num(char *s)
+{
+   int i;
+   int result = 1;
+   for(i = 0; s[i] != '\0'; ++i)
+   {
+      if(!char_is_num(s[i]))
+      {
+         result = 0;
+         break;
+      }
+   }
+   return result;
+}
+
+lispobj *new_lispobj(char *exp)
+{
+   lispobj *result = NULL;
+   if(string_is_num(exp))
+   {
+      result = new_integer(atoi(exp));
+   }
+   else
+   {
+      result = new_symbol(exp);
+   }
+   return result;
+}
+
+list *read_tokens(list *tokens)
+{
+   lispobj *obj;
+   char *s;
+
+   if(tokens == NULL)
+   {
+      obj = NULL;
+   }
+   else
+   {
+      s = car(tokens);
+
+      if(s[0] == '(')
+      {
+         cell *closer = close_token(tokens, 0);
+         obj = read_listtokens(tokens, closer);
+      }
+      else
+      {
+         obj = new_lispobj(s);
+      }
+   }
+   return obj;
+}
+
+/*@null@*/
+list *read_listtokens(cell *tokens, cell *tail)
+{
+   list *result = NULL;
+
+   if(tokens == NULL)
+   {
+      return  NULL;
+   }
+
+   if(tokens == tail)
+   {
+      return NULL;
+   }
+   
+   char *s = car(tokens);
+   if(s[0] == '(')
+   {
+      cell *next = cdr(tokens);
+      s = car(next);
+      if(s[0] == '(')
+      {
+         cell *closer = close_token(next, 0);
+         result = cons(
+            read_listtokens(next, closer),
+            read_listtokens(cdr(closer), tail));
+      }
+      else
+      {
+         result = cons(
+            new_lispobj(s),
+            read_listtokens(cdr(next), tail));
+      }
+   }
+   else
+   {
+      result = cons(
+         new_lispobj(s),
+         read_listtokens(cdr(tokens), tail));
+   }
+   return result;
+}
+
+bool print_lispobj(lispobj *obj)
+{
+   if(obj == NULL)
+   {
+      printf("'()");
+   }
+
+   if(obj->tid == CELL)
+   {
+      void *first = car(obj);
+      void *second = cdr(obj);
+      printf("(");
+      print_lispobj(first);
+      if(second == NULL)
+      {
+         printf(")");
+      }
+      else
+      {
+         print_lispobj(second);
+      }
+   }
+   else
+   {
+      int tid = obj->tid;
+      if(tid == SYMBOL)
+      {
+         printf("%s ", sym_to_string(obj));
+      }
+      else if(tid == INTEGER)
+      {
+         printf("%d ", integer_to_int(obj));
+      }
+      else
+      {
+         printf("typeid=%d ", obj->tid);
+      }
+   }
+   return true;
+}
+
+

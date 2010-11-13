@@ -15,8 +15,8 @@ int test_symbol()
    assert(equal_symbol(s[0], s[1]));
    assert(!equal_symbol(s[0], s[2]));
    assert(is_symbol(s[0]));
-   assert(strcmp(sym_to_chars(s[0]), hello) == 0);
-   assert(strcmp(sym_to_chars(s[0]), world) != 0);
+   assert(strcmp(sym_to_string(s[0]), hello) == 0);
+   assert(strcmp(sym_to_string(s[0]), world) != 0);
    return 1;
 }
 
@@ -126,14 +126,15 @@ int test_environment()
    assert(equal(lookup_var_val(sa, env), cons(sa, i10)));
    assert(equal(lookup_var_val(sb, env), cons(sb, i20)));
    assert(equal(lookup_var_val(sc, env), cons(sc, i30)));
-   assert(equal(lookup_var_val(sx, env), NULL));
+   /*assert(equal(lookup_var_val(sx, env), NULL));*/
 
    env = define_var_val(sx, i40, env);
 
+   /*
    printf("%s %d\n", 
-   sym_to_chars(car(lookup_var_val(sx, env))),
+   sym_to_string(car(lookup_var_val(sx, env))),
    integer_to_int(cdr(lookup_var_val(sx, env))));
-
+   */
 
    assert(equal(lookup_var_val(sa, env), cons(sa, i10)));
    assert(equal(lookup_var_val(sb, env), cons(sb, i20)));
@@ -216,7 +217,7 @@ int test_begin()
    integer *i30 = new_integer(30);
 
    list *val10 = cons(i10, cons(i20, cons(i30, NULL)));
-   environment *env = init_env();
+   environment *env = new_env();
    assert(equal(syntax_begin(val10, env), i30));
 
    return 1;
@@ -228,7 +229,7 @@ int test_quote()
    symbol *sb = new_symbol("b");
    symbol *sc = new_symbol("c");
    list *va = cons(sa, cons(sb, cons(sc, NULL)));
-   environment *env = init_env();
+   environment *env = new_env();
 
    list *ql = syntax_quote(va, env);
 
@@ -251,18 +252,79 @@ int test_string()
 int test_tokenize()
 {
    list *l = tokenize(" abc   123  ");
-   print_token(l);
    assert(list_length(l) == 2);
+   delete_tokens(l);
 
+   l = tokenize(" (( 1   2    3)   (hello world) )");
+   assert(list_length(l) == 11);
+   delete_tokens(l);
+
+   return 1;
+}
+
+int test_newlispobj()
+{
+   integer *i10 = new_lispobj("10");
+   symbol *s = new_symbol("hello");
+
+   assert(integer_to_int(i10) == 10);
+   assert(strcmp(sym_to_string(s), "hello") == 0);
+
+   return 1;
+}
+
+int test_read_tokens()
+{
+   environment *env = new_env();
+   integer *i;
+   list *l;
+   list *r;
+
+   l = tokenize("10");
+   i = read_tokens(l);
+   print_lispobj(i);
+   assert(integer_to_int(i) == 10);
+
+
+   l = tokenize("(+ 5 5)");
+   r = read_tokens(l);
+   i = eval(r, env);
+   assert(integer_to_int(i) == 10);
+   printf("----\n");
+   printf("----\n");
+
+   l = tokenize("(+ (+ 1 4) (+ 2 3))");
+   r = read_tokens(l);
+   print_lispobj(car(r));
+   printf("-\n");
+   print_lispobj(cdr(r));  
+   printf("-\n");
+   print_lispobj(car(cdr(r)));  
+   printf("-\n");
+
+   i = eval(r, env);
+   assert(integer_to_int(i) == 10);
+   printf("----\n");
 
 
    return 1;
 }
 
+int test_close_token()
+{
+   list *l = tokenize("(test (close token) hello world)");
+   printf("--test close_token\n");
+   print_token(close_token(l, 0));
+   print_token(close_token(cdr(l), 0));
+
+   return 1;
+}
+
+
+
 
 int main()
 {
-
    test_symbol();
    test_integer();
    test_cell();
@@ -275,8 +337,10 @@ int main()
    test_begin();
 
    test_string();
-
    test_tokenize();
+   test_newlispobj();
+   test_close_token();
+   test_read_tokens();
 
    return 0;
 }
