@@ -83,6 +83,15 @@ int test_list()
 
    l = cons(c[0], cons(c[1], cons(c[2], NULL)));
 
+   print_result(c[0]);
+   printf("\n");
+   print_result(c[1]);
+   printf("\n");
+   print_result(c[2]);
+   printf("\n");
+   print_result(l);
+   printf("\n");
+
    assert(is_list(l));
    assert(is_list(NULL));
    assert(!is_list(c[0]));
@@ -126,15 +135,8 @@ int test_environment()
    assert(equal(lookup_var_val(sa, env), cons(sa, i10)));
    assert(equal(lookup_var_val(sb, env), cons(sb, i20)));
    assert(equal(lookup_var_val(sc, env), cons(sc, i30)));
-   /*assert(equal(lookup_var_val(sx, env), NULL));*/
 
    env = define_var_val(sx, i40, env);
-
-   /*
-   printf("%s %d\n", 
-   sym_to_string(car(lookup_var_val(sx, env))),
-   integer_to_int(cdr(lookup_var_val(sx, env))));
-   */
 
    assert(equal(lookup_var_val(sa, env), cons(sa, i10)));
    assert(equal(lookup_var_val(sb, env), cons(sb, i20)));
@@ -281,15 +283,14 @@ int test_read_tokens()
    list *r;
 
    l = tokenize("10");
-   i = read_tokens(l);
+   r = read_tokens(l);
+   i = eval(r, env);
    assert(integer_to_int(i) == 10);
-
 
    l = tokenize("(+ 5 5)");
    r = read_tokens(l);
    i = eval(r, env);
    assert(integer_to_int(i) == 10);
-
 
    l = tokenize("(+ (+ 1 4) (+ 2 3))");
    r = read_tokens(l);
@@ -306,20 +307,28 @@ int test_read_tokens()
    i = eval(r, env);
    assert(integer_to_int(i) == 15);
 
+   l = tokenize("((lambda (x) (+ x 1)) 10)");
+   r = read_tokens(l);
+   i = eval(r, env);
+   assert(integer_to_int(i) == 11);
+
+   l = tokenize("(define x 10)");
+   r = read_tokens(l);
+   i = eval(r, env);
+
+   l = tokenize("x");
+   r = read_tokens(l);
+   i = eval(r, env);
+   assert(integer_to_int(i) == 10);
+
    return 1;
 }
 
-int test_close_token()
+bool test_print_result()
 {
-   list *l = tokenize("(test (close token) hello world)");
-   printf("--test close_token\n");
-   print_token(close_token(l, 0));
-   print_token(close_token(cdr(l), 0));
-
-   return 1;
+   
+   return true;
 }
-
-
 
 
 int main()
@@ -338,8 +347,8 @@ int main()
    test_string();
    test_tokenize();
    test_newlispobj();
-   test_close_token();
    test_read_tokens();
+   test_print_result();
 
    return 0;
 }

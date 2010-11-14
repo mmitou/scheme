@@ -931,45 +931,84 @@ list *read_listtokens(list *tokens, cell *tail)
    return obj;
 }
 
-bool print_lispobj(lispobj *obj)
+
+bool print_cell(cell* c, bool is_list_head)
 {
-   if(obj == NULL)
+   lispobj *first;
+   lispobj *second;
+
+   if(c == NULL)
    {
-      printf("'()");
+      fprintf(stderr, "cell is NULL\n");
+      abort();
    }
 
-   if(obj->tid == CELL)
+   if(is_list_head)
    {
-      void *first = car(obj);
-      void *second = cdr(obj);
       printf("(");
-      print_lispobj(first);
-      if(second == NULL)
-      {
-         printf(")");
-      }
-      else
-      {
-         print_lispobj(second);
-      }
+   }
+
+   first = car(c);
+   second = cdr(c);
+
+   if(first == NULL)
+   {
+      printf("'() ");
+   }
+   else if(is_cell(first))
+   {
+      print_cell(first, true);
    }
    else
    {
-      int tid = obj->tid;
-      if(tid == SYMBOL)
-      {
-         printf("%s ", sym_to_string(obj));
-      }
-      else if(tid == INTEGER)
-      {
-         printf("%d ", integer_to_int(obj));
-      }
-      else
-      {
-         printf("typeid=%d ", obj->tid);
-      }
+      print_lispobj(first);
+   }
+
+   if(second == NULL)
+   {
+      printf(")");
+   }
+   else if(is_cell(second))
+   {
+      print_cell(second, false);
+   }
+   else
+   {
+      printf(". ");
+      print_lispobj(second);
+      printf(")");
    }
    return true;
 }
 
+bool print_lispobj(lispobj *obj)
+{
+   int tid = obj->tid;
+   if(tid == SYMBOL)
+   {
+      printf("%s ", sym_to_string(obj));
+   }
+   else if(tid == INTEGER)
+   {
+      printf("%d ", integer_to_int(obj));
+   }
+   else
+   {
+      printf("typeid=%d ", obj->tid);
+   }
+   return true;
+}
+
+bool print_result(lispobj *obj)
+{
+   if(obj == NULL || is_cell(obj))
+   {
+      print_cell(obj, true);
+   }
+   else
+   {
+      print_lispobj(obj);
+   }
+   return true;
+}
 
