@@ -3,9 +3,11 @@ HDRS = lispobj.h
 SRCS = test_lispobj.c lispobj.c 
 
 
-all: test 
+all: test
 test: $(SRCS)
 	gcc -Wall -g $(HDRS) $(SRCS) -o test
+
+tag:
 	gtags -v
 
 lint:

@@ -282,7 +282,6 @@ int test_read_tokens()
 
    l = tokenize("10");
    i = read_tokens(l);
-   print_lispobj(i);
    assert(integer_to_int(i) == 10);
 
 
@@ -290,22 +289,22 @@ int test_read_tokens()
    r = read_tokens(l);
    i = eval(r, env);
    assert(integer_to_int(i) == 10);
-   printf("----\n");
-   printf("----\n");
+
 
    l = tokenize("(+ (+ 1 4) (+ 2 3))");
    r = read_tokens(l);
-   print_lispobj(car(r));
-   printf("-\n");
-   print_lispobj(cdr(r));  
-   printf("-\n");
-   print_lispobj(car(cdr(r)));  
-   printf("-\n");
-
    i = eval(r, env);
    assert(integer_to_int(i) == 10);
-   printf("----\n");
 
+   l = tokenize("(+ (+ 1 2) (+ 2 3) (+ 3 4))");
+   r = read_tokens(l);
+   i = eval(r, env);
+   assert(integer_to_int(i) == 15);
+
+   l = tokenize("(+ (+ (+ 1 2) (+ 2 3)) (+ 3 4))");
+   r = read_tokens(l);
+   i = eval(r, env);
+   assert(integer_to_int(i) == 15);
 
    return 1;
 }

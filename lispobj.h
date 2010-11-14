@@ -114,6 +114,7 @@ list *tokenize(char *exp);
 int print_token(list *tokens);
 int delete_tokens(list *tokens);
 list *read_tokens(list *tokens);
+list *get_closer(list *tokens, int count);
 list *close_token(list *tokens, int count);
 list *read_listtokens(cell *head, cell *tail);
 bool print_lispobj(lispobj* obj);

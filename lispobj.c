@@ -511,11 +511,13 @@ lispobj *eval(lispobj *exp, environment *env)
       else
       {
          fprintf(stderr, "eval error: not applicable\n");
+         abort();
       }
    }
    else
    {
       fprintf(stderr, "eval error: can not evaluate\n");
+      abort();
    }
 
    return result;
@@ -770,6 +772,32 @@ int delete_tokens(list *tokens)
    return 1;
 }
 
+bool get_current_exp(list *tokens, cell **tail)
+{
+   bool result;
+   char *s;
+
+   if(tokens == NULL)
+   {
+      *tail = NULL;
+      result = false;
+   }
+   else
+   {
+      s = car(tokens);
+      if(s[0] == '(')
+      {
+         *tail = close_token(tokens, 0);
+      }
+      else
+      {
+         *tail = tokens;
+      }
+      result = true;
+   }
+   return result;
+}
+
 list *close_token(list *tokens, int count)
 {
    list *result = NULL;
@@ -846,73 +874,61 @@ lispobj *new_lispobj(char *exp)
    return result;
 }
 
-list *read_tokens(list *tokens)
+lispobj* read_tokens(list *tokens)
 {
    lispobj *obj;
    char *s;
 
    if(tokens == NULL)
    {
-      obj = NULL;
+      return NULL;
+   }
+
+   s = car(tokens);
+
+   if(s[0] == '(')
+   {
+      cell *closer;
+      get_current_exp(tokens, &closer);
+      obj = read_listtokens(cdr(tokens), closer);
    }
    else
    {
-      s = car(tokens);
-
-      if(s[0] == '(')
-      {
-         cell *closer = close_token(tokens, 0);
-         obj = read_listtokens(tokens, closer);
-      }
-      else
-      {
-         obj = new_lispobj(s);
-      }
+      obj = new_lispobj(car(tokens));
    }
    return obj;
 }
 
-/*@null@*/
-list *read_listtokens(cell *tokens, cell *tail)
+list *read_listtokens(list *tokens, cell *tail)
 {
-   list *result = NULL;
+   lispobj *obj;
+   cell *closer;
 
    if(tokens == NULL)
    {
-      return  NULL;
+      return NULL;
    }
-
-   if(tokens == tail)
+   else if(tokens == tail)
    {
       return NULL;
    }
-   
-   char *s = car(tokens);
-   if(s[0] == '(')
+
+   get_current_exp(tokens, &closer);
+
+   if(tokens == closer)
    {
-      cell *next = cdr(tokens);
-      s = car(next);
-      if(s[0] == '(')
-      {
-         cell *closer = close_token(next, 0);
-         result = cons(
-            read_listtokens(next, closer),
-            read_listtokens(cdr(closer), tail));
-      }
-      else
-      {
-         result = cons(
-            new_lispobj(s),
-            read_listtokens(cdr(next), tail));
-      }
+      obj = cons(
+         new_lispobj(car(tokens)),
+         read_listtokens(cdr(tokens), tail));
    }
    else
    {
-      result = cons(
-         new_lispobj(s),
-         read_listtokens(cdr(tokens), tail));
+      obj = cons(
+         read_listtokens(cdr(tokens), closer),
+         read_listtokens(cdr(closer), tail));
    }
-   return result;
+
+   return obj;
 }
 
 bool print_lispobj(lispobj *obj)
