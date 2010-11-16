@@ -641,7 +641,7 @@ lispobj *syntax_begin(list *exp, environment *env)
 lispobj *syntax_define(list *exp, environment *env)
 {
    lispobj *var = car(exp);
-   lispobj *val = car(cdr(exp));
+   lispobj *val = eval(car(cdr(exp)),env);
    define_var_val(var, val, env);
    return var;
 }

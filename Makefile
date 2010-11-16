@@ -25,4 +25,4 @@ run:
 
 
 clean:
-	rm *.o test
+	rm *.o test scheme
