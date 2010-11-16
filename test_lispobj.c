@@ -321,6 +321,14 @@ int test_read_tokens()
    i = eval(r, env);
    assert(integer_to_int(i) == 10);
 
+   l = tokenize("(define y (lambda (a) (+ a x)))");
+   r = read_tokens(l);
+   i = eval(r, env);
+   l = tokenize("(y 1)");
+   r = read_tokens(l);
+   i = eval(r, env);
+   assert(integer_to_int(i) == 11);
+
    return 1;
 }
 

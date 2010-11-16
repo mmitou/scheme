@@ -595,11 +595,11 @@ int is_syntax(lispobj *obj)
 }
 
 /*@null@*/
-lispobj *eval_syntax(syntax *s, list *exp, environment *env)
+lispobj *eval_syntax(syntax *s, list *operands, environment *env)
 {
    lispobj *(*evaluate)(list *, environment *);
    evaluate = s->value[0];
-   return evaluate(exp, env);
+   return evaluate(operands, env);
 }
 
 /*@null@*/
@@ -643,7 +643,7 @@ lispobj *syntax_define(list *exp, environment *env)
    lispobj *var = car(exp);
    lispobj *val = car(cdr(exp));
    define_var_val(var, val, env);
-   return NULL;
+   return var;
 }
 
 /*@null@*/
@@ -702,13 +702,19 @@ char *new_word(char *head, char *tail)
 /*@null@*/
 char *wordtail(char *exp)
 {
-   if(exp[0] == ' ' || exp[0] == '\0')
+   if(
+      exp[0] == ' ' || 
+      exp[0] == '\0'||
+      exp[0] == '\t'||
+      exp[0] == '\n')
    {
       return NULL;
    }
    else if(
       exp[1] == ' ' || 
       exp[1] == '\0'||
+      exp[1] == '\t'||
+      exp[1] == '\n'||
       exp[1] == '(' ||
       exp[1] == ')')
    {
@@ -726,6 +732,8 @@ list *tokenize(char *exp)
    {
       case '\0':
          break;
+      case '\n':
+      case '\t':
       case ' ':
          result = tokenize(exp + 1);
          break;
@@ -1001,7 +1009,11 @@ bool print_lispobj(lispobj *obj)
 
 bool print_result(lispobj *obj)
 {
-   if(obj == NULL || is_cell(obj))
+   if(obj == NULL)
+   {
+      printf("'()");
+   }
+   else if(is_cell(obj))
    {
       print_cell(obj, true);
    }
@@ -1012,3 +1024,27 @@ bool print_result(lispobj *obj)
    return true;
 }
 
+
+#ifdef __MAIN__
+int main()
+{
+   char buf[256];
+   environment *env = new_env();
+   lispobj *obj_in;
+   lispobj *obj_out;
+   list *tokens;
+
+   while(printf("> ") && fgets(buf, 256, stdin))
+   {
+      tokens = tokenize(buf);
+      if(tokens != NULL)
+      {
+         obj_in = read_tokens(tokens);
+         obj_out = eval(obj_in, env);
+         print_result(obj_out);
+      }
+      printf("\n");
+   }
+   return 0;
+}
+#endif

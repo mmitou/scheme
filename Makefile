@@ -1,11 +1,15 @@
 
 HDRS = lispobj.h
-SRCS = test_lispobj.c lispobj.c 
+SRCS =  lispobj.c 
+TESTSRCS = test_lispobj.c
+
+all: 
+	gcc -Wall -g -D__MAIN__ $(HDRS) $(SRCS) -o scheme
 
 
-all: test
+
 test: $(SRCS)
-	gcc -Wall -g $(HDRS) $(SRCS) -o test
+	gcc -Wall -g $(HDRS) $(SRCS) $(TESTSRCS) -o test
 
 tag:
 	gtags -v
@@ -13,8 +17,12 @@ tag:
 lint:
 	splint -unqualifiedtrans -compdef lispobj.h lispobj.c
 
-run:
+testrun:
 	./test
+
+run:
+	./scheme
+
 
 clean:
 	rm *.o test
