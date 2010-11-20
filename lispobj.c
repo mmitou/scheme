@@ -27,15 +27,8 @@ static void *get_val(cell *c, int i)
 static void *set_val(cell *c, int i, lispobj *obj)
 {
    void *result = NULL;
-   if(is_cell(c))
-   {
-      result = c->value[i];
-      c->value[i] = obj;
-   }
-   else
-   {
-      fprintf(stderr, "ERROR: %p is not cell\n", c);
-   }
+   result = c->value[i];
+   c->value[i] = obj;
    return result;
 }
 
@@ -101,7 +94,7 @@ symbol *new_symbol(char *name)
        name_size++, p++);
    symbol_name = (char *)malloc(name_size);
    strcpy(symbol_name, name);
-   s->value[0] = symbol_name;
+   set_car(s, symbol_name);
    return s;
 }
 
@@ -124,7 +117,7 @@ bool equal_symbol(symbol *l, symbol *r)
 /*@null@*/
 char *sym_to_string(symbol *s)
 {
-   return (char *)(s->value[0]);
+   return (char *)(car(s));
 }
 
 /* integer */
@@ -135,7 +128,7 @@ integer *new_integer(int x)
    int *p = (int *)malloc(sizeof(int));
    i->tid = INTEGER;
    *p = x;
-   i->value[0] = p;
+   set_car(i, p);
    return i;
 }
 
@@ -146,7 +139,7 @@ bool is_integer(integer *i)
 
 int integer_to_int(integer *i)
 {
-   return *(int *)(i->value[0]);
+   return *(int *)(car(i));
 }
 
 bool equal_integer(integer *l, integer *r)
@@ -167,8 +160,8 @@ character *new_character(char c)
    char *d = (char *)malloc(sizeof(char));
    chrctr->tid = CHARACTER;
    *d = c;
-   chrctr->value[0] = d;
-   chrctr->value[1] = NULL;
+   set_car(chrctr, d);
+   set_cdr(chrctr, NULL);
    return chrctr;
 }
 
@@ -246,7 +239,7 @@ string *new_string(char *s)
       while(*i != '\0')
       {
          d = new_character(*i);
-         c->value[1] = d;
+         set_cdr(c, d);
          c = d;
          ++i;
       }
@@ -526,7 +519,7 @@ lispobj *eval(lispobj *exp, environment *env)
 /*@null@*/
 lispobj *apply_prim_proc(prim_proc *proc, list *arg)
 {
-   lispobj *(*p)(list *) = proc->value[0];
+   lispobj *(*p)(list *) = car(proc);
    return p(arg);
 }
 
@@ -574,7 +567,7 @@ prim_proc *new_prim_proc(lispobj *(*p)(list *))
 {
    prim_proc *proc = (prim_proc*)malloc(sizeof(prim_proc));
    proc->tid = PRIM_PROC;
-   proc->value[0] = (void*)p;
+   set_car(proc, (void*)p);
 
    return proc;
 }
@@ -584,7 +577,7 @@ syntax *new_syntax(lispobj *(*p)(list *,environment *))
 {
    syntax *s = (syntax *)malloc(sizeof(syntax));
    s->tid = SYNTAX;
-   s->value[0] = (void*)p;
+   set_car(s, (void*)p);
 
    return s;
 }
@@ -598,7 +591,7 @@ int is_syntax(lispobj *obj)
 lispobj *eval_syntax(syntax *s, list *operands, environment *env)
 {
    lispobj *(*evaluate)(list *, environment *);
-   evaluate = s->value[0];
+   evaluate = car(s);
    return evaluate(operands, env);
 }
 
@@ -658,17 +651,17 @@ lambda *new_lambda(list *arg_body, environment *env)
 {
    lambda *l = (lambda *)malloc(sizeof(lambda));
    l->tid = LAMBDA;
-   l->value[0] = arg_body;
-   l->value[1] = env;
+   set_car(l, arg_body);
+   set_cdr(l, env);
    return l;
 }
 
 /*@null@*/
 lispobj *apply_lambda(lambda *l, list *vals)
 {
-   list *vars = car((list*)(l->value[0]));
-   list *body = cdr((list*)(l->value[0]));
-   environment *env = l->value[1];
+   list *vars = car(car(l));
+   list *body = cdr(car(l));
+   environment *env = cdr(l);
    env = extend_env(vars, vals, env);
    return syntax_begin(body, env);
 }
