@@ -591,21 +591,20 @@ int is_syntax(lispobj *obj)
 lispobj *eval_syntax(syntax *s, list *operands, environment *env)
 {
    lispobj *(*evaluate)(list *, environment *);
+
+
    evaluate = car(s);
    return evaluate(operands, env);
 }
 
 /*@null@*/
-lispobj *syntax_quote(list *exp, environment *env)
+lispobj *syntax_quote(list *operands, environment *env)
 {
-   lispobj *result = NULL;
-   if(exp != NULL && cdr(exp) == NULL)
+   lispobj *result = operands;
+
+   if(operands != NULL && (cdr(operands) == NULL))
    {
-      result = car(exp);
-   }
-   else
-   {
-      fprintf(stderr, "quote error\n");
+      result = car(operands);
    }
    return result;
 }
@@ -745,6 +744,11 @@ list *tokenize(char *exp)
    return result;
 }
 
+list *expand_readmacro(list *tokens)
+{
+   return tokens;
+}
+
 int print_token(list *tokens)
 {
    char *s = NULL;
@@ -755,7 +759,7 @@ int print_token(list *tokens)
       print_token(cdr(tokens));
    }
    return 1;
-}
+}z
 
 int delete_tokens(list *tokens)
 {
@@ -1018,6 +1022,8 @@ bool print_result(lispobj *obj)
 }
 
 
+
+
 #ifdef __MAIN__
 int main()
 {
@@ -1030,6 +1036,7 @@ int main()
    while(printf("> ") && fgets(buf, 256, stdin))
    {
       tokens = tokenize(buf);
+      tokens = expand_readmacro(tokens);
       if(tokens != NULL)
       {
          obj_in = read_tokens(tokens);
