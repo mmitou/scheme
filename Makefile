@@ -8,7 +8,7 @@ all:
 
 
 
-test: $(SRCS)
+test: $(SRCS) $(TESTSRCS)
 	gcc -Wall -g $(HDRS) $(SRCS) $(TESTSRCS) -o test
 
 tag:

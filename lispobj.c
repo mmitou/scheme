@@ -5,6 +5,10 @@
 #include <string.h>
 #include <assert.h>
 
+/* lower index is higher priority */
+char* special_chars[] = {",@", "`", "'", ","};
+char* readmacro_symbols[] = {"unquote-splicing", "quasiquote", "quote", "unquote"};
+char* brackets_chars[] = {"(", ")"};
 
 /* cell */
 /*@out@*/
@@ -715,37 +719,114 @@ char *wordtail(char *exp)
    return wordtail(++exp);
 }   
 
+
+/* return number of equal chars. */
+int equal_head_string(char *lhs, char *rhs)
+{
+   int i = 0;
+   if(lhs == NULL || rhs == NULL)
+   {
+      return i;
+   }
+
+   for(i = 0; lhs[i] != '\0' || rhs[i] != '\0'; ++i)
+   {
+      if(lhs[i] != rhs[i]) break;
+   }
+
+   return i;
+}
+
+bool string_has_any_symbol(char *string, char **symbols, int num_of_syms)
+{
+   int i;
+
+   for(i = 0; i < num_of_syms; ++i)
+   {
+      if(strlen(symbols[i]) == equal_head_string(symbols[i], string))
+      {
+         return true;
+      }
+   }
+   return false;
+}
+
 list *tokenize(char *exp)
 {
    list *result = NULL;
    char *tail = NULL;
+   char c = exp[0];
+   int i = 0;
+   bool is_spcl = false;
+   int len_of_sc = 0;
+   int len_of_eq = 0;
+   int len_of_brckts = 0;
+   bool is_brckts = false;
 
-   switch(exp[0])
+   if(c == '\0')
    {
-      case '\0':
-         break;
-      case '\n':
-      case '\t':
-      case ' ':
-         result = tokenize(exp + 1);
-         break;
-      case '(':
-         result = cons("(", tokenize(exp + 1));
-         break;
-      case ')':
-         result = cons(")", tokenize(exp + 1));
-         break;
-      default:
-         tail = wordtail(exp);
-         result = 
-            cons(new_word(exp, tail), tokenize(tail + 1));
-         break;
+      return result;
    }
+
+   if(
+      c == '\n' ||
+      c == '\t' ||
+      c == ' ' )
+   {
+      result = tokenize(exp + 1);
+      return result;
+   }
+
+   for(i = 0, is_brckts = false; i < sizeof(brackets_chars)/sizeof(char*); ++i)
+   {
+      len_of_brckts = strlen(brackets_chars[i]);
+      len_of_eq = equal_head_string(brackets_chars[i], exp);
+      if(len_of_brckts == len_of_eq)
+      {
+         is_brckts = true;
+         break;
+      }
+   }
+   if(is_brckts)
+   {
+      result = cons((void*)brackets_chars[i], tokenize(exp + len_of_brckts));
+      return result;
+   }
+
+
+   for(i = 0, is_spcl = false; i < sizeof(special_chars) / sizeof(char*); ++i)
+   {
+      len_of_sc = strlen(special_chars[i]);
+      len_of_eq = equal_head_string(special_chars[i], exp);
+
+      if(len_of_sc == len_of_eq)
+      {
+         is_spcl = true;
+         break;
+      }
+   }
+
+   if(is_spcl)
+   {
+      result = cons((void*)special_chars[i], tokenize(exp + len_of_sc));
+      return result;
+   }
+
+   tail = wordtail(exp);
+   result = cons(new_word(exp, tail), tokenize(tail + 1));
    return result;
 }
 
 list *expand_readmacro(list *tokens)
 {
+   if(tokens == NULL)
+   {
+      return NULL;
+   }
+
+   
+
+
    return tokens;
 }
 
@@ -759,18 +840,40 @@ int print_token(list *tokens)
       print_token(cdr(tokens));
    }
    return 1;
-}z
+}
 
 int delete_tokens(list *tokens)
 {
-   char *s = NULL;
    if(tokens != NULL)
    {
-      s = car(tokens);
-      if(s[0] != '(' && s[0] != ')')
+      char *s = car(tokens);
+      int i;
+      bool symbol_is_special_chars = false;
+      bool symbol_is_brackets_chars = false;
+
+      for(i = 0; i < (sizeof(special_chars)/sizeof(char*)); ++i)
+      {
+         if(s == special_chars[i])
+         {
+            symbol_is_special_chars = true;
+            break;
+         }
+      }
+
+      for(i = 0; i < (sizeof(brackets_chars)/sizeof(char*)); ++i)
+      {
+         if(s == brackets_chars[i])
+         {
+            symbol_is_brackets_chars = true;
+            break;
+         }
+      }
+
+      if(!symbol_is_special_chars && !symbol_is_brackets_chars)
       {
          free(s);
       }
+
       delete_tokens(cdr(tokens));
       free(tokens);
    }
@@ -1021,9 +1124,6 @@ bool print_result(lispobj *obj)
    return true;
 }
 
-
-
-
 #ifdef __MAIN__
 int main()
 {
@@ -1036,9 +1136,9 @@ int main()
    while(printf("> ") && fgets(buf, 256, stdin))
    {
       tokens = tokenize(buf);
-      tokens = expand_readmacro(tokens);
       if(tokens != NULL)
       {
+         tokens = expand_readmacro(tokens);
          obj_in = read_tokens(tokens);
          obj_out = eval(obj_in, env);
          print_result(obj_out);

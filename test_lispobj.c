@@ -254,11 +254,40 @@ int test_string()
 int test_tokenize()
 {
    list *l = tokenize(" abc   123  ");
+   char *s;
+
    assert(list_length(l) == 2);
    delete_tokens(l);
 
    l = tokenize(" (( 1   2    3)   (hello world) )");
    assert(list_length(l) == 11);
+   delete_tokens(l);
+
+   l = tokenize("'x");
+   s = (char*)car(l);
+   assert(s[0] == '\'');
+   delete_tokens(l);
+
+   l = tokenize("`x");
+   s = (char*)car(l);
+   assert(s[0] == '`');
+   assert(list_length(l) == 2);
+   delete_tokens(l);
+
+   l = tokenize(",x");
+   s = (char*)car(l);
+   assert(s[0] == ',');
+   assert(list_length(l) == 2);
+   delete_tokens(l);
+
+   l = tokenize(",@x");
+   s = (char*)car(l);
+   assert(s[0] == ',');
+   assert(s[1] == '@');
+   delete_tokens(l);
+
+   l = tokenize("`(xxx ,y ,@a )");
+   assert(list_length(l) == 8);
    delete_tokens(l);
 
    return 1;
