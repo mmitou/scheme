@@ -313,50 +313,71 @@ int test_read_tokens()
 
    l = tokenize("10");
    r = read_tokens(l);
+   r = expand_readmacro(r);
    i = eval(r, env);
    assert(integer_to_int(i) == 10);
 
    l = tokenize("(+ 5 5)");
    r = read_tokens(l);
+   r = expand_readmacro(r);
    i = eval(r, env);
    assert(integer_to_int(i) == 10);
 
    l = tokenize("(+ (+ 1 4) (+ 2 3))");
    r = read_tokens(l);
+   r = expand_readmacro(r);
    i = eval(r, env);
    assert(integer_to_int(i) == 10);
 
    l = tokenize("(+ (+ 1 2) (+ 2 3) (+ 3 4))");
    r = read_tokens(l);
+   r = expand_readmacro(r);
    i = eval(r, env);
    assert(integer_to_int(i) == 15);
 
    l = tokenize("(+ (+ (+ 1 2) (+ 2 3)) (+ 3 4))");
    r = read_tokens(l);
+   r = expand_readmacro(r);
    i = eval(r, env);
    assert(integer_to_int(i) == 15);
 
    l = tokenize("((lambda (x) (+ x 1)) 10)");
    r = read_tokens(l);
+   r = expand_readmacro(r);
    i = eval(r, env);
    assert(integer_to_int(i) == 11);
 
    l = tokenize("(define x 10)");
    r = read_tokens(l);
+   r = expand_readmacro(r);
    i = eval(r, env);
 
    l = tokenize("x");
    r = read_tokens(l);
+   r = expand_readmacro(r);
    i = eval(r, env);
    assert(integer_to_int(i) == 10);
 
    l = tokenize("(define y (lambda (a) (+ a x)))");
    r = read_tokens(l);
+   r = expand_readmacro(r);
    i = eval(r, env);
    l = tokenize("(y 1)");
+   r = expand_readmacro(r);
    r = read_tokens(l);
    i = eval(r, env);
    assert(integer_to_int(i) == 11);
+
+   l = tokenize("'(1 . 2)");
+   l = expand_readmacro(l);
+   r = read_tokens(l);
+   printf("----\n");
+   print_result(r);
+
+   i = eval(r, env);
+   assert(integer_to_int(car(i)) == 1);
+   assert(integer_to_int(cdr(i)) == 2);
+
 
    return 1;
 }
@@ -405,6 +426,11 @@ bool test_expandreadmacro()
    print_tokens(l);
    delete_tokens(l);
 
+   l = tokenize("'(1 . 2)");
+   l = expand_readmacro(l);
+   print_tokens(l);
+   delete_tokens(l);
+
    return true;
 }
 
@@ -424,8 +450,9 @@ int main()
    test_string();
    test_tokenize();
    test_newlispobj();
-   test_read_tokens();
    test_expandreadmacro();
+   test_read_tokens();
+
 
 
    return 0;

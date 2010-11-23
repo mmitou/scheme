@@ -92,10 +92,15 @@ typedef lispobj syntax;
 syntax *new_syntax(lispobj *(*p)(list *, environment *));
 int is_syntax(lispobj* obj);
 lispobj *eval_syntax(syntax *s, list *exp, environment *env);
-lispobj *syntax_quote(list *exp, environment *env);
 lispobj *syntax_begin(list *exp, environment *env);
 lispobj *syntax_define(list *exp, environment *env);
 lispobj *syntax_lambda(list *exp, environment *env);
+
+lispobj *syntax_quote(list *operands, environment *env);
+lispobj *syntax_unquote_splicing(list *operands, environment *env);
+lispobj *syntax_quasiquote(list *operands, environment *env);
+lispobj *syntax_unquote(list *operands, environment *env);
+
 
 /* lambda */
 typedef lispobj lambda;

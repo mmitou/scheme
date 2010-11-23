@@ -613,6 +613,30 @@ lispobj *syntax_quote(list *operands, environment *env)
    return result;
 }
 
+lispobj *syntax_unquote_splicing(list *operands, environment *env)
+{
+   return NULL;
+}
+
+lispobj *syntax_quasiquote(list *operands, environment *env)
+{
+   lispobj *result = operands;
+
+   if(operands != NULL && (cdr(operands) == NULL))
+   {
+      result = car(operands);
+   }
+   return result;
+}
+
+lispobj *syntax_unquote(list *operands, environment *env)
+{
+   return NULL;
+}
+
+
+
+
 /*@null@*/
 lispobj *syntax_begin(list *exp, environment *env)
 {
@@ -1027,9 +1051,19 @@ list *read_listtokens(list *tokens, cell *tail)
 
    if(tokens == closer)
    {
-      obj = cons(
-         new_lispobj(car(tokens)),
-         read_listtokens(cdr(tokens), tail));
+      lispobj *new_car = new_lispobj(car(tokens));
+      lispobj *new_cdr;
+
+      if(strcmp(car(cdr(tokens)), ".") == 0)
+      {
+         new_cdr = new_lispobj(car(cdr(cdr(tokens))));
+      }
+      else
+      {
+         new_cdr = read_listtokens(cdr(tokens), tail);
+      }
+
+      obj = cons(new_car, new_cdr);
    }
    else
    {
@@ -1040,7 +1074,6 @@ list *read_listtokens(list *tokens, cell *tail)
 
    return obj;
 }
-
 
 bool print_cell(cell* c, bool is_list_head)
 {
@@ -1139,10 +1172,6 @@ bool print_tokens(list *l)
       return print_tokens(cdr(l));
    }
 }
-
-
-
-
 
 #ifdef __MAIN__
 int main()
