@@ -120,5 +120,8 @@ list *read_listtokens(cell *head, cell *tail);
 bool print_cell(lispobj* obj, bool is_list_head);
 bool print_lispobj(lispobj* obj);
 bool print_result(lispobj *obj);
+bool print_tokens(list *l);
+bool get_current_exp(list *tokens, cell **tail);
+list *expand_readmacro(list *tokens);
 
 #endif

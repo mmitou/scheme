@@ -361,12 +361,52 @@ int test_read_tokens()
    return 1;
 }
 
-bool test_print_result()
+bool test_expandreadmacro()
 {
-   
+   list *l = tokenize(" abc   123  ");
+   char *s;
+
+   assert(list_length(l) == 2);
+   delete_tokens(l);
+
+   l = tokenize(" (( 1   2    3)   (hello world) )");
+   l = expand_readmacro(l);
+   print_tokens(l);
+   delete_tokens(l);
+
+   l = tokenize("'x");
+   l = expand_readmacro(l);
+   print_tokens(l);
+   delete_tokens(l);
+
+   l = tokenize("`x");
+   l = expand_readmacro(l);
+   print_tokens(l);
+   s = (char*)car(l);
+   delete_tokens(l);
+
+   l = tokenize(",x");
+   l = expand_readmacro(l);
+   print_tokens(l);
+   delete_tokens(l);
+
+   l = tokenize(",@x");
+   l = expand_readmacro(l);
+   print_tokens(l);
+   delete_tokens(l);
+
+   l = tokenize("`(xxx ,y ,@a )");
+   l = expand_readmacro(l);
+   print_tokens(l);
+   delete_tokens(l);
+
+   l = tokenize("`(xxx (,y (,@a) . z ))");
+   l = expand_readmacro(l);
+   print_tokens(l);
+   delete_tokens(l);
+
    return true;
 }
-
 
 int main()
 {
@@ -385,7 +425,8 @@ int main()
    test_tokenize();
    test_newlispobj();
    test_read_tokens();
-   test_print_result();
+   test_expandreadmacro();
+
 
    return 0;
 }

@@ -737,14 +737,20 @@ int equal_head_string(char *lhs, char *rhs)
    return i;
 }
 
-bool string_has_any_symbol(char *string, char **symbols, int num_of_syms)
+bool string_has_any_symbol(char *string, char **symbols, int num_of_syms, int *len, int *index)
 {
    int i;
+   int len_symbol;
+   int len_string;
 
    for(i = 0; i < num_of_syms; ++i)
    {
-      if(strlen(symbols[i]) == equal_head_string(symbols[i], string))
+      len_symbol = strlen(symbols[i]);
+      len_string = equal_head_string(symbols[i], string);
+      if(len_symbol == len_string)
       {
+         *len = len_symbol;
+         *index = i;
          return true;
       }
    }
@@ -756,12 +762,7 @@ list *tokenize(char *exp)
    list *result = NULL;
    char *tail = NULL;
    char c = exp[0];
-   int i = 0;
-   bool is_spcl = false;
-   int len_of_sc = 0;
-   int len_of_eq = 0;
-   int len_of_brckts = 0;
-   bool is_brckts = false;
+   int len, index;
 
    if(c == '\0')
    {
@@ -777,38 +778,15 @@ list *tokenize(char *exp)
       return result;
    }
 
-   for(i = 0, is_brckts = false; i < sizeof(brackets_chars)/sizeof(char*); ++i)
+   if(string_has_any_symbol(exp, brackets_chars, sizeof(brackets_chars)/sizeof(char*), &len, &index))
    {
-      len_of_brckts = strlen(brackets_chars[i]);
-      len_of_eq = equal_head_string(brackets_chars[i], exp);
-      if(len_of_brckts == len_of_eq)
-      {
-         is_brckts = true;
-         break;
-      }
-   }
-   if(is_brckts)
-   {
-      result = cons((void*)brackets_chars[i], tokenize(exp + len_of_brckts));
+      result = cons((void*)brackets_chars[index], tokenize(exp + len));
       return result;
    }
 
-
-   for(i = 0, is_spcl = false; i < sizeof(special_chars) / sizeof(char*); ++i)
+   if(string_has_any_symbol(exp, special_chars, sizeof(special_chars)/sizeof(char*), &len, &index))
    {
-      len_of_sc = strlen(special_chars[i]);
-      len_of_eq = equal_head_string(special_chars[i], exp);
-
-      if(len_of_sc == len_of_eq)
-      {
-         is_spcl = true;
-         break;
-      }
-   }
-
-   if(is_spcl)
-   {
-      result = cons((void*)special_chars[i], tokenize(exp + len_of_sc));
+      result = cons((void*)special_chars[index], tokenize(exp + len));
       return result;
    }
 
@@ -817,17 +795,46 @@ list *tokenize(char *exp)
    return result;
 }
 
+
+bool index_of_equal_string(char *s, char **strings, int size, int *index)
+{
+   int i;
+   bool result = false;
+   for(i = 0; i < size; ++i)
+   {
+      if(strcmp(s, strings[i]) == 0)
+      {
+         *index = i;
+         result = true;
+         break;
+      }
+   }
+   return result;
+}
+
 list *expand_readmacro(list *tokens)
 {
+   int index;
+   list *result = NULL;
    if(tokens == NULL)
    {
-      return NULL;
+      return result;
    }
 
+   if(index_of_equal_string(car(tokens), special_chars, sizeof(special_chars)/sizeof(char*), &index))
+   {
+      cell *closer;
+      get_current_exp(cdr(tokens), &closer);
+      set_cdr(closer, cons(")", cdr(closer)));
+      result = cons("(", cons(readmacro_symbols[index], expand_readmacro(cdr(tokens))));
+   }
+   else
+   {
+      set_cdr(tokens, expand_readmacro(cdr(tokens)));
+      result = tokens;
+   }
    
-
-
-   return tokens;
+   return result;
 }
 
 int print_token(list *tokens)
@@ -842,34 +849,29 @@ int print_token(list *tokens)
    return 1;
 }
 
+bool has_any_pointers(char *s, char **pointers, int size)
+{
+   int i = 0;
+   for(i = 0; i < size; ++i)
+   {
+      if(s == pointers[i])
+      {
+         return true;
+      }
+   }
+   return false;
+}
+
 int delete_tokens(list *tokens)
 {
    if(tokens != NULL)
    {
       char *s = car(tokens);
-      int i;
-      bool symbol_is_special_chars = false;
-      bool symbol_is_brackets_chars = false;
 
-      for(i = 0; i < (sizeof(special_chars)/sizeof(char*)); ++i)
-      {
-         if(s == special_chars[i])
-         {
-            symbol_is_special_chars = true;
-            break;
-         }
-      }
-
-      for(i = 0; i < (sizeof(brackets_chars)/sizeof(char*)); ++i)
-      {
-         if(s == brackets_chars[i])
-         {
-            symbol_is_brackets_chars = true;
-            break;
-         }
-      }
-
-      if(!symbol_is_special_chars && !symbol_is_brackets_chars)
+      if(
+         !has_any_pointers(s, special_chars, sizeof(special_chars)/sizeof(char*)) &&
+         !has_any_pointers(s, brackets_chars, sizeof(brackets_chars)/sizeof(char*)) &&
+         !has_any_pointers(s, readmacro_symbols, sizeof(readmacro_symbols)/sizeof(char*)))
       {
          free(s);
       }
@@ -1123,6 +1125,24 @@ bool print_result(lispobj *obj)
    }
    return true;
 }
+
+bool print_tokens(list *l)
+{
+   if(l == NULL)
+   {
+      printf("\n");
+      return true;
+   }
+   else
+   {
+      printf("%s ", (char*)car(l));
+      return print_tokens(cdr(l));
+   }
+}
+
+
+
+
 
 #ifdef __MAIN__
 int main()
