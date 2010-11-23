@@ -3,7 +3,7 @@ HDRS = lispobj.h
 SRCS =  lispobj.c 
 TESTSRCS = test_lispobj.c
 
-all: 
+all: $(HDRS) $(SRCS)
 	gcc -Wall -g -D__MAIN__ $(HDRS) $(SRCS) -o scheme
 
 
@@ -12,7 +12,7 @@ test: $(SRCS) $(TESTSRCS)
 	gcc -Wall -g $(HDRS) $(SRCS) $(TESTSRCS) -o test
 
 tag:
-	gtags -v
+	@gtags -v
 
 lint:
 	splint -unqualifiedtrans -compdef lispobj.h lispobj.c

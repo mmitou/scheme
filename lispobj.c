@@ -6,6 +6,7 @@
 #include <assert.h>
 
 /* lower index is higher priority */
+enum SPCL_CHRS {UNQUOTE_SPLICING , QUASIQUOTE, QUOTE, UNQUOTE, NUM_OF_SPCIL_CHRS };
 char* special_chars[] = {",@", "`", "'", ","};
 char* readmacro_symbols[] = {"unquote-splicing", "quasiquote", "quote", "unquote"};
 char* brackets_chars[] = {"(", ")"};
@@ -618,15 +619,27 @@ lispobj *syntax_unquote_splicing(list *operands, environment *env)
    return NULL;
 }
 
+lispobj *evaluate_quasiquote(list *exp, environment *env)
+{
+   return NULL;
+}
+
 lispobj *syntax_quasiquote(list *operands, environment *env)
 {
-   lispobj *result = operands;
-
-   if(operands != NULL && (cdr(operands) == NULL))
+   if(operands == NULL)
    {
-      result = car(operands);
+      return NULL;
    }
-   return result;
+   else if(cdr(operands) == NULL)
+   {
+      return evaluate_quasiquote(car(operands), env);
+   }
+   else
+   {
+      return cons(
+         evaluate_quasiquote(car(operands), env),
+         evaluate_quasiquote(cdr(operands), env));
+   }
 }
 
 lispobj *syntax_unquote(list *operands, environment *env)
