@@ -55,6 +55,7 @@ char character_to_char(character *c);
 typedef lispobj list;
 bool is_list(lispobj *obj);
 cell *assoc(symbol *s, list *l);
+list *append(list *lhs, lispobj *rhs);
 int list_length(list *l);
 
 /* string */

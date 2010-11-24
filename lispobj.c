@@ -6,7 +6,7 @@
 #include <assert.h>
 
 /* lower index is higher priority */
-enum SPCL_CHRS {UNQUOTE_SPLICING , QUASIQUOTE, QUOTE, UNQUOTE, NUM_OF_SPCIL_CHRS };
+enum SPCL_CHRS {UNQUOTE_SPLICING, QUASIQUOTE, QUOTE, UNQUOTE, NUM_OF_SPCIL_CHRS };
 char* special_chars[] = {",@", "`", "'", ","};
 char* readmacro_symbols[] = {"unquote-splicing", "quasiquote", "quote", "unquote"};
 char* brackets_chars[] = {"(", ")"};
@@ -220,6 +220,31 @@ cell *assoc(symbol *s, list *l)
       }
    }
    return result;
+}
+
+lispobj *append(list *lhs, lispobj *rhs)
+{
+   if(lhs == NULL)
+   {
+      return rhs;
+   }
+   else if(is_cell(lhs))
+   {
+      if(cdr(lhs) == NULL)
+      {
+         set_cdr(lhs, rhs);
+         return lhs;
+      }
+      else
+      {
+         return cons(car(lhs), append(cdr(lhs), rhs));
+      }
+   }
+   else
+   {
+      fprintf(stderr,"arg 0 is not list\n");
+      abort();
+   }
 }
 
 int list_length(list *l)
@@ -462,6 +487,10 @@ lispobj *eval(lispobj *exp, environment *env)
    lispobj *operator;
    list *operands;
 
+   if(exp == NULL)
+   {
+      result = NULL;
+   }
    if(is_integer(exp))
    {
       result = exp;
@@ -619,9 +648,49 @@ lispobj *syntax_unquote_splicing(list *operands, environment *env)
    return NULL;
 }
 
-lispobj *evaluate_quasiquote(list *exp, environment *env)
+lispobj *evaluate_quasiquote(lispobj *exp, environment *env)
 {
-   return NULL;
+   if(exp == NULL)
+   {
+      return NULL;
+   }
+   else if(is_cell(exp))
+   {
+      lispobj *obj = car(exp);
+      if(obj == NULL)
+      {
+         return cons(NULL, evaluate_quasiquote(cdr(exp), env));
+      }
+      else if(is_symbol(obj) && strcmp(sym_to_string(obj), readmacro_symbols[UNQUOTE]) == 0)
+      {
+         return eval(cdr(exp), env);
+      }
+      else if(is_symbol(obj) && strcmp(sym_to_string(obj), readmacro_symbols[UNQUOTE_SPLICING]) == 0)
+      {
+         return cons(obj, eval(cdr(exp), env));
+      }
+      else
+      {
+         lispobj *evaluated_car = evaluate_quasiquote(car(exp), env);
+
+         if(
+            evaluated_car != NULL && 
+            is_cell(evaluated_car) && 
+            is_symbol(car(evaluated_car)) &&
+            strcmp(sym_to_string(car(evaluated_car)), readmacro_symbols[UNQUOTE_SPLICING]) == 0)
+         {
+            return append(cdr(evaluated_car), evaluate_quasiquote(cdr(exp), env));
+         }
+         else
+         {
+            return cons(evaluated_car, evaluate_quasiquote(cdr(exp), env));
+         }
+      }
+   }
+   else
+   {
+      return exp;
+   }
 }
 
 lispobj *syntax_quasiquote(list *operands, environment *env)
