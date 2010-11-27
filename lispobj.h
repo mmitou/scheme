@@ -85,8 +85,9 @@ typedef lispobj prim_proc;
 prim_proc *new_prim_proc(lispobj *(*p)(list *));
 int is_prim_proc(lispobj *obj);
 lispobj *apply_prim_proc(prim_proc *proc, list *arg);
-
 integer *proc_plus_integer(list *integers);
+lispobj *prim_car(lispobj *obj);
+lispobj *prim_cdr(lispobj *obj);
 
 /* syntax */
 typedef lispobj syntax;
@@ -101,7 +102,6 @@ lispobj *syntax_quote(list *operands, environment *env);
 lispobj *syntax_unquote_splicing(list *operands, environment *env);
 lispobj *syntax_quasiquote(list *operands, environment *env);
 lispobj *syntax_unquote(list *operands, environment *env);
-
 
 /* lambda */
 typedef lispobj lambda;

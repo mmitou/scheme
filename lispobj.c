@@ -222,29 +222,41 @@ cell *assoc(symbol *s, list *l)
    return result;
 }
 
+cell *last_cell(list *l)
+{
+   if(l == NULL)
+   {
+      return NULL;
+   }
+   else if(cdr(l) == NULL)
+   {
+      return l;
+   }
+   else
+   {
+      return last_cell(cdr(l));
+   }
+}
+
 lispobj *append(list *lhs, lispobj *rhs)
 {
    if(lhs == NULL)
    {
       return rhs;
    }
-   else if(is_cell(lhs))
+   else if(is_list(lhs))
    {
-      if(cdr(lhs) == NULL)
+      cell *lc = last_cell(lhs);
+      if(lc != NULL)
       {
-         set_cdr(lhs, rhs);
+         set_cdr(lc, rhs);
          return lhs;
       }
-      else
-      {
-         return cons(car(lhs), append(cdr(lhs), rhs));
-      }
    }
-   else
-   {
-      fprintf(stderr,"arg 0 is not list\n");
-      abort();
-   }
+
+   fprintf(stderr,"append error\n");
+   abort();
+   return NULL;
 }
 
 int list_length(list *l)
@@ -387,8 +399,7 @@ environment *extend_env(
 }
 
 /*@null@*/
-environment *define_var_val(
-   symbol *var, lispobj *val, environment *env)
+environment *define_var_val(symbol *var, lispobj *val, environment *env)
 {
    environment *result = NULL;
    cell *c = NULL;
@@ -441,12 +452,19 @@ environment *new_env()
    symbol *lambda = new_symbol("lambda");
    symbol *quote = new_symbol("quote");
    symbol *plus = new_symbol("+");
+   symbol *symbol_car = new_symbol("car");
+   symbol *symbol_cdr = new_symbol("cdr");
+   symbol *quasiquote = new_symbol(readmacro_symbols[QUASIQUOTE]);
 
    syntax *s_begin = new_syntax(syntax_begin);
    syntax *s_define = new_syntax(syntax_define);
    syntax *s_lambda = new_syntax(syntax_lambda);
    syntax *s_quote = new_syntax(syntax_quote);
+   syntax *s_quasiquote = new_syntax(syntax_quasiquote);
+
    prim_proc *p_plus = new_prim_proc(proc_plus_integer);
+   prim_proc *p_car = new_prim_proc(prim_car);
+   prim_proc *p_cdr = new_prim_proc(prim_cdr);
 
    list *vars = 
       cons(begin,
@@ -454,7 +472,10 @@ environment *new_env()
       cons(lambda,
       cons(quote,
       cons(plus,
-      NULL)))));
+      cons(quasiquote,
+      cons(symbol_car,
+      cons(symbol_cdr,
+      NULL))))))));
    
    list *vals =
       cons(s_begin,
@@ -462,7 +483,10 @@ environment *new_env()
       cons(s_lambda,
       cons(s_quote,
       cons(p_plus,
-      NULL)))));
+      cons(s_quasiquote,
+      cons(p_car,
+      cons(p_cdr,
+      NULL))))))));
 
    return extend_env(vars, vals, NULL);
 }
@@ -591,6 +615,43 @@ integer *proc_plus_integer(list *integers)
    return new_integer(result);
 }
 
+lispobj *prim_car(lispobj *obj)
+{
+   if(obj == NULL)
+   {
+      fprintf(stderr,"car error: obj == NULL");
+      abort();
+   }
+   else if(list_length(obj) != 1)
+   {
+      fprintf(stderr,"car error: arg error ");
+      abort();
+   }
+   else
+   {
+      return car(car(obj));
+   }
+}
+
+lispobj *prim_cdr(lispobj *obj)
+{
+   if(obj == NULL)
+   {
+      fprintf(stderr,"cdr error: obj == NULL");
+      abort();
+   }
+   else if(list_length(obj) != 1)
+   {
+      fprintf(stderr,"cdr error: arg error ");
+      abort();
+   }
+   else
+   {
+      return cdr(car(obj));
+   }
+}
+
+
 int is_prim_proc(lispobj *obj)
 {
    return obj->tid == PRIM_PROC;
@@ -663,11 +724,11 @@ lispobj *evaluate_quasiquote(lispobj *exp, environment *env)
       }
       else if(is_symbol(obj) && strcmp(sym_to_string(obj), readmacro_symbols[UNQUOTE]) == 0)
       {
-         return eval(cdr(exp), env);
+         return eval(car(cdr(exp)), env);
       }
       else if(is_symbol(obj) && strcmp(sym_to_string(obj), readmacro_symbols[UNQUOTE_SPLICING]) == 0)
       {
-         return cons(obj, eval(cdr(exp), env));
+         return cons(obj, eval(car(cdr(exp)), env));
       }
       else
       {
@@ -715,7 +776,6 @@ lispobj *syntax_unquote(list *operands, environment *env)
 {
    return NULL;
 }
-
 
 
 

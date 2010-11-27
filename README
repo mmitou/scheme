@@ -1,1 +1,12 @@
-define, lambda, + だけできます
+以下の事だけできます。
+
+syntax:
+define lambda begin
+
+primitive procedure:
++ car cdr
+
+readmacro:
+' ` , ,@
+
+

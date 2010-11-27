@@ -371,12 +371,54 @@ int test_read_tokens()
    l = tokenize("'(1 . 2)");
    l = expand_readmacro(l);
    r = read_tokens(l);
-   printf("----\n");
-   print_result(r);
-
    i = eval(r, env);
    assert(integer_to_int(car(i)) == 1);
    assert(integer_to_int(cdr(i)) == 2);
+
+   l = tokenize("`(1 2)");
+   l = expand_readmacro(l);
+   r = read_tokens(l);
+   i = eval(r, env);
+   assert(integer_to_int(car(i)) == 1);
+   assert(integer_to_int(car(cdr(i))) == 2);
+
+   l = tokenize("`(,x ,x)");
+   l = expand_readmacro(l);
+   r = read_tokens(l);
+   i = eval(r, env);
+   assert(integer_to_int(car(i)) == 10);
+   assert(integer_to_int(car(cdr(i))) == 10);
+
+   l = tokenize("`(,(+ 5 5) ,(+ 5 5))");
+   l = expand_readmacro(l);
+   r = read_tokens(l);
+   i = eval(r, env);
+   assert(integer_to_int(car(i)) == 10);
+   assert(integer_to_int(car(cdr(i))) == 10);
+
+
+   
+   l = tokenize("(define y `(,x ,x))");
+   l = expand_readmacro(l);
+   r = read_tokens(l);
+   i = eval(r, env);
+
+   l = tokenize("`(,@y)");
+   l = expand_readmacro(l);
+   r = read_tokens(l);
+   i = eval(r, env);
+   assert(integer_to_int(car(i)) == 10);
+   assert(integer_to_int(car(cdr(i))) == 10);
+
+   l = tokenize("`(1 ,@y 3)");
+   l = expand_readmacro(l);
+   r = read_tokens(l);
+   i = eval(r, env);
+   assert(integer_to_int(car(i)) == 1);
+   assert(integer_to_int(car(cdr(i))) == 10);
+   assert(integer_to_int(car(cdr(cdr(i)))) == 10);
+   assert(integer_to_int(car(cdr(cdr(cdr(i))))) == 3);
+
 
 
    return 1;
@@ -433,6 +475,8 @@ bool test_expandreadmacro()
 
    return true;
 }
+
+
 
 int main()
 {

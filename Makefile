@@ -3,10 +3,11 @@ HDRS = lispobj.h
 SRCS =  lispobj.c 
 TESTSRCS = test_lispobj.c
 
-all: $(HDRS) $(SRCS)
+all: scheme test tag
+
+
+scheme: $(HDRS) $(SRCS)
 	gcc -Wall -g -D__MAIN__ $(HDRS) $(SRCS) -o scheme
-
-
 
 test: $(SRCS) $(TESTSRCS)
 	gcc -Wall -g $(HDRS) $(SRCS) $(TESTSRCS) -o test
