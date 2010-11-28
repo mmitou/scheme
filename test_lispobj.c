@@ -96,9 +96,9 @@ int test_list()
    assert(is_list(NULL));
    assert(!is_list(c[0]));
 
-   assert(equal(assoc(x, l), c[0]));
-   assert(equal(assoc(y, l), c[2]));
-   assert(equal(assoc(z, l), NULL));
+   assert(generic_equal(assoc(x, l), c[0]));
+   assert(generic_equal(assoc(y, l), c[2]));
+   assert(generic_equal(assoc(z, l), NULL));
 
    return 1;
 }
@@ -132,34 +132,34 @@ int test_environment()
 
    env = extend_env(vara, val10, env);
 
-   assert(equal(lookup_var_val(sa, env), cons(sa, i10)));
-   assert(equal(lookup_var_val(sb, env), cons(sb, i20)));
-   assert(equal(lookup_var_val(sc, env), cons(sc, i30)));
+   assert(generic_equal(lookup_var_val(sa, env), cons(sa, i10)));
+   assert(generic_equal(lookup_var_val(sb, env), cons(sb, i20)));
+   assert(generic_equal(lookup_var_val(sc, env), cons(sc, i30)));
 
    env = define_var_val(sx, i40, env);
 
-   assert(equal(lookup_var_val(sa, env), cons(sa, i10)));
-   assert(equal(lookup_var_val(sb, env), cons(sb, i20)));
-   assert(equal(lookup_var_val(sc, env), cons(sc, i30)));
-   assert(equal(lookup_var_val(sx, env), cons(sx, i40)));
-   assert(equal(lookup_var_val(sy, env), NULL));
+   assert(generic_equal(lookup_var_val(sa, env), cons(sa, i10)));
+   assert(generic_equal(lookup_var_val(sb, env), cons(sb, i20)));
+   assert(generic_equal(lookup_var_val(sc, env), cons(sc, i30)));
+   assert(generic_equal(lookup_var_val(sx, env), cons(sx, i40)));
+   assert(generic_equal(lookup_var_val(sy, env), NULL));
 
    env = set_var_val(sx, i50, env);
 
-   assert(equal(lookup_var_val(sa, env), cons(sa, i10)));
-   assert(equal(lookup_var_val(sb, env), cons(sb, i20)));
-   assert(equal(lookup_var_val(sc, env), cons(sc, i30)));
-   assert(equal(lookup_var_val(sx, env), cons(sx, i50)));
-   assert(equal(lookup_var_val(sy, env), NULL));
+   assert(generic_equal(lookup_var_val(sa, env), cons(sa, i10)));
+   assert(generic_equal(lookup_var_val(sb, env), cons(sb, i20)));
+   assert(generic_equal(lookup_var_val(sc, env), cons(sc, i30)));
+   assert(generic_equal(lookup_var_val(sx, env), cons(sx, i50)));
+   assert(generic_equal(lookup_var_val(sy, env), NULL));
 
    env = extend_env(varx, val40, env);
-   assert(equal(lookup_var_val(sa, env), cons(sa, i10)));
-   assert(equal(lookup_var_val(sb, env), cons(sb, i20)));
-   assert(equal(lookup_var_val(sc, env), cons(sc, i30)));
-   assert(equal(lookup_var_val(sx, env), cons(sx, i40)));
-   assert(equal(lookup_var_val(sy, env), cons(sy, i50)));
-   assert(equal(lookup_var_val(sz, env), cons(sz, i60)));
-   assert(equal(lookup_var_val(sn, env), NULL));
+   assert(generic_equal(lookup_var_val(sa, env), cons(sa, i10)));
+   assert(generic_equal(lookup_var_val(sb, env), cons(sb, i20)));
+   assert(generic_equal(lookup_var_val(sc, env), cons(sc, i30)));
+   assert(generic_equal(lookup_var_val(sx, env), cons(sx, i40)));
+   assert(generic_equal(lookup_var_val(sy, env), cons(sy, i50)));
+   assert(generic_equal(lookup_var_val(sz, env), cons(sz, i60)));
+   assert(generic_equal(lookup_var_val(sn, env), NULL));
 
    return 1;
 }
@@ -186,13 +186,13 @@ int test_eval()
 
    env = extend_env(vara, val10, env);
 
-   assert(equal(eval(sa, env), i10));
-   assert(equal(eval(i10, env), i10));
+   assert(generic_equal(eval(sa, env), i10));
+   assert(generic_equal(eval(i10, env), i10));
 
    define_var_val(plus, proc, env);
 
-   assert(equal(car(list_of_values(val10, env)), i10));
-   assert(equal(eval(plus_i, env), i60)); 
+   assert(generic_equal(car(list_of_values(val10, env)), i10));
+   assert(generic_equal(eval(plus_i, env), i60)); 
 
    return 1;
    
@@ -206,8 +206,8 @@ int test_plus_integer()
    integer *i60 = new_integer(60);
    list *val10 = cons(i10, cons(i20, cons(i30, NULL)));
 
-   assert(equal(proc_plus_integer(cons(i10,NULL)), i10));
-   assert(equal(proc_plus_integer(val10), i60));
+   assert(generic_equal(proc_plus_integer(cons(i10,NULL)), i10));
+   assert(generic_equal(proc_plus_integer(val10), i60));
 
    return 1;
 }
@@ -220,7 +220,7 @@ int test_begin()
 
    list *val10 = cons(i10, cons(i20, cons(i30, NULL)));
    environment *env = new_env();
-   assert(equal(syntax_begin(val10, env), i30));
+   assert(generic_equal(syntax_begin(val10, env), i30));
 
    return 1;
 }
@@ -235,9 +235,9 @@ int test_quote()
 
    list *ql = syntax_quote(va, env);
 
-   assert(equal(car(ql), sa));
-   assert(equal(car(cdr(ql)), sb));
-   assert(equal(car(cdr(cdr(ql))), sc));
+   assert(generic_equal(car(ql), sa));
+   assert(generic_equal(car(cdr(ql)), sb));
+   assert(generic_equal(car(cdr(cdr(ql))), sc));
 
    return 1;
 }
@@ -498,7 +498,6 @@ bool test_macro()
    l = read_tokens(expand_readmacro(
          tokenize("(defmacro m (x) `(,x ,x))")));
    m = eval(eval(l, env), env);
-   assert(m->tid == MACRO);
    
    arg = car(m);
    body = cdr(m);
@@ -507,6 +506,43 @@ bool test_macro()
    return true;
 }
 
+bool test_equal()
+{
+   symbol *s[3];
+   integer *i[3];
+   boolean *b[3];
+   
+   s[0] = new_symbol("foo");
+   s[1] = new_symbol("bar");
+   s[2] = new_symbol("foo");
+
+   i[0] = new_integer(0);
+   i[1] = new_integer(1);
+   i[2] = new_integer(0);
+
+   b[0] = new_boolean(true);
+   b[1] = new_boolean(false);
+   b[2] = new_boolean(true);
+
+   assert(generic_equal(s[0], s[0]) == true);
+   assert(generic_equal(s[0], s[1]) == false);
+   assert(generic_equal(s[0], s[2]) == true);
+
+   assert(generic_equal(i[0], i[0]) == true);
+   assert(generic_equal(i[0], i[1]) == false);
+   assert(generic_equal(i[0], i[2]) == true);
+
+   assert(generic_equal(b[0], b[0]) == true);
+   assert(generic_equal(b[0], b[1]) == false);
+   assert(generic_equal(b[0], b[2]) == true);
+
+   assert(generic_equal(b[0], s[0]) == false);
+   assert(generic_equal(b[0], i[1]) == false);
+   assert(generic_equal(s[0], b[1]) == false);
+
+
+   return true;
+}
 
 int main()
 {
@@ -528,6 +564,8 @@ int main()
    test_read_tokens();
 
    test_macro();
+
+   test_equal();
 
    return 0;
 }

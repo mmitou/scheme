@@ -3,11 +3,6 @@
 
 #include <stdbool.h>
 
-typedef enum type_id 
-{
-   SYMBOL, CELL, INTEGER, CHARACTER, SYNTAX, MACRO, 
-   PRIM_PROC, LAMBDA, NUM_OF_TYPES
-} type_id;
 
 enum lispobj_define
 {
@@ -66,8 +61,8 @@ bool is_string(lispobj *s);
 bool equal_string(string *l, string *r);
 char *string_to_chars(string *l);
 
-/* generic equal */
-bool equal(lispobj *l, lispobj *r);
+/* generic func */
+bool generic_equal(lispobj *l, lispobj *r);
 
 /* environment */
 typedef list environment;
@@ -90,6 +85,12 @@ integer *proc_plus_integer(list *integers);
 lispobj *prim_car(lispobj *obj);
 lispobj *prim_cdr(lispobj *obj);
 
+/*boolean*/
+typedef lispobj boolean;
+bool is_boolean(lispobj* obj);
+boolean* new_boolean(bool b);
+bool equal_boolean(boolean *lhs, boolean *rhs);
+
 /* syntax */
 typedef lispobj syntax;
 syntax *new_syntax(lispobj *(*p)(list *, environment *));
@@ -103,6 +104,7 @@ lispobj *syntax_quote(list *operands, environment *env);
 lispobj *syntax_unquote_splicing(list *operands, environment *env);
 lispobj *syntax_quasiquote(list *operands, environment *env);
 lispobj *syntax_unquote(list *operands, environment *env);
+boolean *syntax_gequal(list *operands, environment *env);
 
 /* lambda */
 typedef lispobj lambda;
@@ -137,5 +139,6 @@ bool is_macro(lispobj *obj);
 macro *new_macro(list *arg, list *body);
 lispobj *eval_macro(macro *m, lispobj *operands, environment *env);
 macro *syntax_defmacro(list *exp, environment *env);
+
 
 #endif

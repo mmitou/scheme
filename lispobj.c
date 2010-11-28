@@ -5,11 +5,23 @@
 #include <string.h>
 #include <assert.h>
 
+typedef enum type_id 
+{
+   SYMBOL, CELL, INTEGER, CHARACTER, BOOLEAN, 
+   SYNTAX, MACRO, PRIM_PROC, LAMBDA,  NUM_OF_TYPES
+} type_id;
+
 /* lower index is higher priority */
 enum SPCL_CHRS {UNQUOTE_SPLICING, QUASIQUOTE, QUOTE, UNQUOTE, NUM_OF_SPCIL_CHRS };
 char* special_chars[] = {",@", "`", "'", ","};
 char* readmacro_symbols[] = {"unquote-splicing", "quasiquote", "quote", "unquote"};
 char* brackets_chars[] = {"(", ")"};
+
+/* generic equal */
+bool (*equalf_pointers[NUM_OF_TYPES])(lispobj *, lispobj *)
+= {equal_symbol, equal_cell, equal_integer, equal_character,
+   equal_boolean, NULL};
+
 
 /* cell */
 /*@out@*/
@@ -82,7 +94,8 @@ bool equal_cell(cell *l, cell* r)
    if(is_cell(l) && is_cell(r))
    {
       result = 
-         (equal(car(l), car(r)) && equal(cdr(l), cdr(r)));
+         (generic_equal(car(l), car(r)) && 
+         generic_equal(cdr(l), cdr(r)));
    }
    return result;
 }
@@ -210,7 +223,7 @@ cell *assoc(symbol *s, list *l)
    if(l != NULL && is_list(l))
    {
       pair = car(l);
-      if(equal(s, car(pair)))
+      if(generic_equal(s, car(pair)))
       {
          result = pair;
       }
@@ -343,39 +356,24 @@ char *string_to_chars(string *l)
    return result;
 }
 
-/* generic equal */
-bool (*equalf_pointers[NUM_OF_TYPES])(lispobj *, lispobj *)
- = {NULL};
-
-static void init_equal_func()
+bool generic_equal(lispobj *l, lispobj *r)
 {
-   equalf_pointers[SYMBOL] = equal_symbol;
-   equalf_pointers[CELL] = equal_cell;
-   equalf_pointers[INTEGER] = equal_integer;
-}
-
-bool equal(lispobj *l, lispobj *r)
-{
-   bool result = false;
-   if(equalf_pointers[0] == NULL)
-   {
-      init_equal_func();
-   }
-
    if(l == r)
    {
-      result = true;
+      return true;
    }
    else if(l == NULL || r == NULL)
    {
-      result = false;
+      return false;
+   }
+   else if(l->tid == r->tid)
+   {
+      return equalf_pointers[l->tid](l, r);
    }
    else
    {
-      result = equalf_pointers[l->tid](l, r);
+      return false;
    }
-
-   return result;
 }
 
 /* environment */
@@ -470,7 +468,10 @@ environment *new_env()
    symbol *symbol_car = new_symbol("car");
    symbol *symbol_cdr = new_symbol("cdr");
    symbol *symbol_defmacro = new_symbol("defmacro");
+   symbol *symbol_gequal = new_symbol("gequal");
    symbol *quasiquote = new_symbol(readmacro_symbols[QUASIQUOTE]);
+   symbol *symbol_true = new_symbol("#t");
+   symbol *symbol_false = new_symbol("#f");
 
    syntax *s_begin = new_syntax(syntax_begin);
    syntax *s_define = new_syntax(syntax_define);
@@ -478,10 +479,14 @@ environment *new_env()
    syntax *s_quote = new_syntax(syntax_quote);
    syntax *s_quasiquote = new_syntax(syntax_quasiquote);
    syntax *s_defmacro = new_syntax(syntax_defmacro);
+   syntax *s_gequal = new_syntax(syntax_gequal);
 
    prim_proc *p_plus = new_prim_proc(proc_plus_integer);
    prim_proc *p_car = new_prim_proc(prim_car);
    prim_proc *p_cdr = new_prim_proc(prim_cdr);
+
+   boolean *b_true = new_boolean(true);
+   boolean *b_false = new_boolean(false);
 
    list *vars = 
       cons(begin,
@@ -493,7 +498,10 @@ environment *new_env()
       cons(symbol_car,
       cons(symbol_cdr,
       cons(symbol_defmacro,
-      NULL)))))))));
+      cons(symbol_gequal,
+      cons(symbol_true,
+      cons(symbol_false,
+      NULL))))))))))));
    
    list *vals =
       cons(s_begin,
@@ -505,7 +513,10 @@ environment *new_env()
       cons(p_car,
       cons(p_cdr,
       cons(s_defmacro,
-      NULL)))))))));
+      cons(s_gequal,
+      cons(b_true,
+      cons(b_false,
+      NULL))))))))))));
 
    return extend_env(vars, vals, NULL);
 }
@@ -733,6 +744,20 @@ lispobj *syntax_quote(list *operands, environment *env)
 lispobj *syntax_unquote_splicing(list *operands, environment *env)
 {
    return NULL;
+}
+
+boolean *syntax_gequal(list *operands, environment *env)
+{
+   if(list_length(operands) != 2)
+   {
+      fprintf(stderr, "gequal error\n");
+      abort();
+   }
+   else
+   {
+      bool result = generic_equal(car(operands), car(cdr(operands)));
+      return new_boolean(result);
+   }
 }
 
 lispobj *evaluate_quasiquote(lispobj *exp, environment *env)
@@ -1164,16 +1189,14 @@ bool string_is_num(char *s)
 
 lispobj *new_lispobj(char *exp)
 {
-   lispobj *result = NULL;
    if(string_is_num(exp))
    {
-      result = new_integer(atoi(exp));
+      return new_integer(atoi(exp));
    }
    else
    {
-      result = new_symbol(exp);
+      return new_symbol(exp);
    }
-   return result;
 }
 
 lispobj* read_tokens(list *tokens)
@@ -1312,6 +1335,10 @@ bool print_lispobj(lispobj *obj)
    {
       printf("%d ", integer_to_int(obj));
    }
+   else if(tid == BOOLEAN)
+   {
+      printf("%s ", (*((bool*)car(obj)))? "#t" : "#f");
+   }
    else
    {
       printf("typeid=%d ", obj->tid);
@@ -1383,10 +1410,36 @@ bool is_macro(lispobj *l)
    return l->tid == MACRO;
 }
 
+bool is_boolean(lispobj* obj)
+{
+   return obj->tid == BOOLEAN;
+}
 
+boolean* new_boolean(bool b)
+{
+   boolean *nwbln = (boolean*)malloc(sizeof(boolean));
+   bool *nwb = (bool *)malloc(sizeof(bool));
+   nwbln->tid = BOOLEAN;
+   *nwb = b;
+   set_car(nwbln, nwb);
+   return nwbln;
+}
 
-
-
+bool equal_boolean(boolean *lhs, boolean *rhs)
+{
+   if(lhs == rhs)
+   {
+      return true;
+   }
+   else if(lhs == NULL || rhs == NULL)
+   {
+      return false;
+   }
+   else 
+   {
+      return *((bool*)car(lhs)) == *((bool*)car(rhs));
+   }
+}
 
 #ifdef __MAIN__
 int main()
