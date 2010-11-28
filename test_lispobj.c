@@ -419,6 +419,17 @@ int test_read_tokens()
    assert(integer_to_int(car(cdr(cdr(i)))) == 10);
    assert(integer_to_int(car(cdr(cdr(cdr(i))))) == 3);
 
+   l = tokenize("()");
+   l = expand_readmacro(l);
+   r = read_tokens(l);
+   i = eval(r, env);
+   assert(i == NULL);
+
+   l = tokenize("'(   ) ");
+   l = expand_readmacro(l);
+   r = read_tokens(l);
+   i = eval(r, env);
+   assert(i == NULL);
 
 
    return 1;
@@ -476,6 +487,25 @@ bool test_expandreadmacro()
    return true;
 }
 
+bool test_macro()
+{
+   list *l;
+   environment *env = new_env();
+   macro *m;
+   list *arg;
+   list *body;
+
+   l = read_tokens(expand_readmacro(
+         tokenize("(defmacro m (x) `(,x ,x))")));
+   m = eval(eval(l, env), env);
+   assert(m->tid == MACRO);
+   
+   arg = car(m);
+   body = cdr(m);
+   assert(equal_symbol(car(arg), new_symbol("x")));
+   assert(equal_symbol(car(body), new_symbol("quasiquote")));
+   return true;
+}
 
 
 int main()
@@ -497,7 +527,7 @@ int main()
    test_expandreadmacro();
    test_read_tokens();
 
-
+   test_macro();
 
    return 0;
 }

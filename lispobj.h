@@ -20,6 +20,7 @@ typedef struct lispobj
       void *value[NUM_OF_VALUES];
 } lispobj;
 
+
 /* cell */
 typedef lispobj cell;
 void *car(cell *c);
@@ -129,5 +130,12 @@ bool print_result(lispobj *obj);
 bool print_tokens(list *l);
 bool get_current_exp(list *tokens, cell **tail);
 list *expand_readmacro(list *tokens);
+
+/*macro*/
+typedef lispobj macro;
+bool is_macro(lispobj *obj);
+macro *new_macro(list *arg, list *body);
+lispobj *eval_macro(macro *m, lispobj *operands, environment *env);
+macro *syntax_defmacro(list *exp, environment *env);
 
 #endif

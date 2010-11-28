@@ -380,20 +380,35 @@ bool equal(lispobj *l, lispobj *r)
 
 /* environment */
 /*@null@*/
-static list *new_frame(list *vars, list *vals)
+static list *new_frame(lispobj *vars, list *vals)
 {
    list *result = NULL;
-   if(vars != NULL && vals != NULL)
+
+   if(vars == NULL || vals == NULL)
    {
-      result = cons(cons(car(vars), car(vals)), 
-      new_frame(cdr(vars), cdr(vals)));
+      result = NULL;
    }
+   else if(is_symbol(vars))
+   {
+      result = 
+         cons(cons(vars, vals), NULL);
+   }
+   else
+   {
+      lispobj *var = car(vars);
+      lispobj *val = car(vals);
+
+      result = 
+         cons(
+            cons(var, val),
+            new_frame(cdr(vars), cdr(vals)));
+   }
+
    return result;
 }
 
 /*@null@*/
-environment *extend_env(
-   list *vars, list *vals, environment *env)
+environment *extend_env(list *vars, list *vals, environment *env)
 {
    return cons(new_frame(vars, vals), env);
 }
@@ -454,6 +469,7 @@ environment *new_env()
    symbol *plus = new_symbol("+");
    symbol *symbol_car = new_symbol("car");
    symbol *symbol_cdr = new_symbol("cdr");
+   symbol *symbol_defmacro = new_symbol("defmacro");
    symbol *quasiquote = new_symbol(readmacro_symbols[QUASIQUOTE]);
 
    syntax *s_begin = new_syntax(syntax_begin);
@@ -461,6 +477,7 @@ environment *new_env()
    syntax *s_lambda = new_syntax(syntax_lambda);
    syntax *s_quote = new_syntax(syntax_quote);
    syntax *s_quasiquote = new_syntax(syntax_quasiquote);
+   syntax *s_defmacro = new_syntax(syntax_defmacro);
 
    prim_proc *p_plus = new_prim_proc(proc_plus_integer);
    prim_proc *p_car = new_prim_proc(prim_car);
@@ -475,7 +492,8 @@ environment *new_env()
       cons(quasiquote,
       cons(symbol_car,
       cons(symbol_cdr,
-      NULL))))))));
+      cons(symbol_defmacro,
+      NULL)))))))));
    
    list *vals =
       cons(s_begin,
@@ -486,7 +504,8 @@ environment *new_env()
       cons(s_quasiquote,
       cons(p_car,
       cons(p_cdr,
-      NULL))))))));
+      cons(s_defmacro,
+      NULL)))))))));
 
    return extend_env(vars, vals, NULL);
 }
@@ -515,7 +534,7 @@ lispobj *eval(lispobj *exp, environment *env)
    {
       result = NULL;
    }
-   if(is_integer(exp))
+   else if(is_integer(exp))
    {
       result = exp;
    }
@@ -558,6 +577,13 @@ lispobj *eval(lispobj *exp, environment *env)
       {
          operands = cdr(exp);
          result = eval_syntax(operator, operands, env);
+      }
+      else if(is_macro(operator))
+      {
+         lispobj *expanded_exp;
+         operands = cdr(exp);
+         expanded_exp = eval_macro(operator, operands, env);
+         result = eval(expanded_exp, env);
       }
       else
       {
@@ -1164,14 +1190,23 @@ lispobj* read_tokens(list *tokens)
 
    if(s[0] == '(')
    {
-      cell *closer;
-      get_current_exp(tokens, &closer);
-      obj = read_listtokens(cdr(tokens), closer);
+      s = car(cdr(tokens)); 
+      if(s[0] == ')')
+      {
+         return NULL;
+      }
+      else
+      {
+         cell *closer;
+         get_current_exp(tokens, &closer);
+         obj = read_listtokens(cdr(tokens), closer);
+      }
    }
    else
    {
       obj = new_lispobj(car(tokens));
    }
+
    return obj;
 }
 
@@ -1314,6 +1349,44 @@ bool print_tokens(list *l)
       return print_tokens(cdr(l));
    }
 }
+
+/*MACRO*/
+macro *new_macro(list *arg, list *body)
+{
+   macro *m = (macro *)malloc(sizeof(macro));
+   m->tid = MACRO;
+   set_car(m, arg);
+   set_cdr(m, body);
+   return m;
+}
+
+lispobj *eval_macro(macro *m, lispobj *operands, environment *env)
+{
+   list *vars = car(m);
+   list *body = cdr(m);
+   env = extend_env(vars, operands, env);
+   return eval(body, env);
+}
+
+macro *syntax_defmacro(list *exp, environment *env)
+{
+   lispobj *macroname = car(exp);
+   lispobj *arg = car(cdr(exp));
+   lispobj *body = car(cdr(cdr(exp)));
+   lispobj *macro = new_macro(arg, body);
+   define_var_val(macroname, macro, env);
+   return macroname;
+}
+
+bool is_macro(lispobj *l)
+{
+   return l->tid == MACRO;
+}
+
+
+
+
+
 
 #ifdef __MAIN__
 int main()
