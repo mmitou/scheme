@@ -1,7 +1,7 @@
 以下の事だけできます。
 
 syntax:
-define lambda begin
+define defmacro lambda begin cond
 
 primitive procedure:
 + car cdr

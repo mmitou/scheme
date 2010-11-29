@@ -59,7 +59,7 @@ typedef list string;
 string *new_string(char *s);
 bool is_string(lispobj *s);
 bool equal_string(string *l, string *r);
-char *string_to_chars(string *l);
+
 
 /* generic func */
 bool generic_equal(lispobj *l, lispobj *r);

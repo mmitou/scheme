@@ -7,7 +7,7 @@
 
 typedef enum type_id 
 {
-   SYMBOL, CELL, INTEGER, CHARACTER, BOOLEAN, 
+   SYMBOL, CELL, INTEGER, CHARACTER, BOOLEAN, STRING,
    SYNTAX, MACRO, PRIM_PROC, LAMBDA,  NUM_OF_TYPES
 } type_id;
 
@@ -281,80 +281,24 @@ int list_length(list *l)
 /*@null@*/
 string *new_string(char *s)
 {
-   char *i = s;
-   character *c = NULL;
-   character *d = NULL;
-   string *result = NULL;
-
-   if(*i != '\0')
-   {
-      result = new_character(*i);
-      c = result;
-      i++;
-      while(*i != '\0')
-      {
-         d = new_character(*i);
-         set_cdr(c, d);
-         c = d;
-         ++i;
-      }
-   }
-   
-   return result;
+   string *ns = (string*)malloc(sizeof(string));
+   ns->tid = STRING;
+   set_car(ns, s);
+   set_cdr(ns, NULL);
+   return ns;
 }
 
 bool is_string(lispobj *s)
 {
-   bool result = false;
-   if(s == NULL)
-   {
-      result = true;
-   }
-   else if(is_character(s))
-   {
-      result = is_string(cdr(s));
-   }
-   else
-   {
-      result = false;
-   }
-   return result;
+   return s->tid == STRING;
 }
 
 bool equal_string(string *l, string *r)
 {
-   bool result = false;
-   if(l == NULL && r == NULL)
-   {
-      result = true;
-   }
-   else if( l != NULL && r != NULL)
-   {
-      if(equal_character(l, r))
-      {
-         result = equal_string(cdr(l), cdr(r));
-      }
-   }
-   return result;
+   return strcmp(car(l), car(r)) == 0;
 }
 
-/*@null@*/
-char *string_to_chars(string *l)
-{
-   int len = list_length(l);
-   char *result = (char*)malloc(sizeof(char)*len + 1);
-   char *i = result;
-   character *c = l;
 
-   while(c != NULL)
-   {
-      *i = *(char*)(c->value[0]);
-      ++i;
-      c = c->value[1];
-   }
-   *i = '\0';
-   return result;
-}
 
 bool generic_equal(lispobj *l, lispobj *r)
 {
@@ -1488,8 +1432,7 @@ bool equal_boolean(boolean *lhs, boolean *rhs)
    }
 }
 
-#ifdef __MAIN__
-int main()
+bool repl()
 {
    char buf[256];
    environment *env = new_env();
@@ -1508,6 +1451,51 @@ int main()
          print_result(obj_out);
       }
       printf("\n");
+   }
+   return true;
+}
+
+lispobj* evaluate_file(char *filepath, environment *env)
+{
+   FILE *fp = fopen(filepath, "r");
+   char buf[BUFSIZ] = {0};
+   list *tokens = cons("(", cons("begin", NULL));
+   list *objs;
+
+   if(fp == NULL)
+   {
+      fprintf(stderr, "fopen error");
+      abort();
+   }
+
+   while(fgets(buf, BUFSIZ, fp))
+   {
+      append(tokens,tokenize(buf));
+   }
+
+   append(tokens, tokenize(")"));
+   tokens = expand_readmacro(tokens);
+   objs = read_tokens(tokens);
+   objs = eval(objs, env);
+   print_result(objs);
+   printf("\n");
+
+   fclose(fp);
+
+   return objs;
+}
+
+
+#ifdef __MAIN__
+int main(int argc, char **argv)
+{
+   if(argc == 2)
+   {
+      evaluate_file(argv[1], new_env());
+   }
+   else
+   {
+      repl();
    }
    return 0;
 }

@@ -245,9 +245,8 @@ int test_quote()
 int test_string()
 {
    string *s = new_string("hello!");
-   char *c = string_to_chars(cdr(s));
-
-   printf("%s\n", c);
+   assert(is_string(s));
+   assert(strcmp(car(s), "hello!") == 0);
    return 1;
 }
 
@@ -570,18 +569,14 @@ int main()
    test_cell();
    test_list();
    test_environment();
-
    test_eval();
-
    test_plus_integer();
    test_begin();
-
    test_string();
    test_tokenize();
    test_newlispobj();
    test_expandreadmacro();
    test_read_tokens();
-
    test_macro();
    test_equal();
    test_cond();
