@@ -90,6 +90,7 @@ typedef lispobj boolean;
 bool is_boolean(lispobj* obj);
 boolean* new_boolean(bool b);
 bool equal_boolean(boolean *lhs, boolean *rhs);
+bool is_true(lispobj *obj);
 
 /* syntax */
 typedef lispobj syntax;
@@ -105,6 +106,8 @@ lispobj *syntax_unquote_splicing(list *operands, environment *env);
 lispobj *syntax_quasiquote(list *operands, environment *env);
 lispobj *syntax_unquote(list *operands, environment *env);
 boolean *syntax_gequal(list *operands, environment *env);
+lispobj *syntax_cond(list *exp, environment *env);
+
 
 /* lambda */
 typedef lispobj lambda;

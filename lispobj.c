@@ -470,8 +470,7 @@ environment *new_env()
    symbol *symbol_defmacro = new_symbol("defmacro");
    symbol *symbol_gequal = new_symbol("gequal");
    symbol *quasiquote = new_symbol(readmacro_symbols[QUASIQUOTE]);
-   symbol *symbol_true = new_symbol("#t");
-   symbol *symbol_false = new_symbol("#f");
+   symbol *symbol_cond = new_symbol("cond"); 
 
    syntax *s_begin = new_syntax(syntax_begin);
    syntax *s_define = new_syntax(syntax_define);
@@ -480,13 +479,11 @@ environment *new_env()
    syntax *s_quasiquote = new_syntax(syntax_quasiquote);
    syntax *s_defmacro = new_syntax(syntax_defmacro);
    syntax *s_gequal = new_syntax(syntax_gequal);
+   syntax *s_cond = new_syntax(syntax_cond);
 
    prim_proc *p_plus = new_prim_proc(proc_plus_integer);
    prim_proc *p_car = new_prim_proc(prim_car);
    prim_proc *p_cdr = new_prim_proc(prim_cdr);
-
-   boolean *b_true = new_boolean(true);
-   boolean *b_false = new_boolean(false);
 
    list *vars = 
       cons(begin,
@@ -499,9 +496,8 @@ environment *new_env()
       cons(symbol_cdr,
       cons(symbol_defmacro,
       cons(symbol_gequal,
-      cons(symbol_true,
-      cons(symbol_false,
-      NULL))))))))))));
+      cons(symbol_cond,
+      NULL)))))))))));
    
    list *vals =
       cons(s_begin,
@@ -514,9 +510,8 @@ environment *new_env()
       cons(p_cdr,
       cons(s_defmacro,
       cons(s_gequal,
-      cons(b_true,
-      cons(b_false,
-      NULL))))))))))));
+      cons(s_cond,
+      NULL)))))))))));
 
    return extend_env(vars, vals, NULL);
 }
@@ -544,6 +539,10 @@ lispobj *eval(lispobj *exp, environment *env)
    if(exp == NULL)
    {
       result = NULL;
+   }
+   else if(is_boolean(exp))
+   {
+      result = exp;
    }
    else if(is_integer(exp))
    {
@@ -864,6 +863,30 @@ lispobj *syntax_lambda(list *exp, environment *env)
 {
    return new_lambda(exp, env);
 }
+
+lispobj *syntax_cond(list *exp, environment *env)
+{
+   if(exp == NULL || !is_cell(exp))
+   {
+      fprintf(stderr, "cond error\n");
+      abort();
+   }
+
+   lispobj *cond = car(car(exp));
+   lispobj *sexp = car(cdr(car(exp)));
+
+   if(strcmp(sym_to_string(cond), "else") == 0 ||
+   is_true(eval(cond, env)))
+   {
+      return eval(sexp, env);
+   }
+   else
+   {
+      return syntax_cond(cdr(exp), env);
+   }
+}
+
+
 
 /* lambda */
 /*@null@*/
@@ -1193,6 +1216,12 @@ lispobj *new_lispobj(char *exp)
    {
       return new_integer(atoi(exp));
    }
+   else if(
+      (strcmp(exp, "#t") == 0) || 
+      (strcmp(exp, "#f") == 0))
+   {
+      return new_boolean(exp[1] == 't');
+   }
    else
    {
       return new_symbol(exp);
@@ -1414,6 +1443,24 @@ bool is_boolean(lispobj* obj)
 {
    return obj->tid == BOOLEAN;
 }
+
+bool is_true(lispobj *obj)
+{
+   if(obj == NULL)
+   {
+      return true;
+   }
+   if(obj->tid != BOOLEAN)
+   {
+      return true;
+   }
+   else if(*((bool*)car(obj)) == true)
+   {
+      return true;
+   }
+   return false;
+}
+
 
 boolean* new_boolean(bool b)
 {

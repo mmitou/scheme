@@ -540,6 +540,25 @@ bool test_equal()
    assert(generic_equal(b[0], i[1]) == false);
    assert(generic_equal(s[0], b[1]) == false);
 
+   return true;
+}
+
+bool test_cond()
+{
+   list *l;
+   environment *env = new_env();
+   macro *m;
+   
+   l = read_tokens(expand_readmacro(
+         tokenize("(cond ((+ 1 2) (+ 2 3)) (else 0))")));
+   m = eval(eval(l, env), env);
+   
+   assert(integer_to_int(m) == 5);
+
+   l = read_tokens(expand_readmacro(
+         tokenize("(cond (#f (+ 2 3)) (#f (+ 2 3))(else 0))")));
+   m = eval(eval(l, env), env);
+   assert(integer_to_int(m) == 0);
 
    return true;
 }
@@ -564,8 +583,8 @@ int main()
    test_read_tokens();
 
    test_macro();
-
    test_equal();
+   test_cond();
 
    return 0;
 }
