@@ -59,6 +59,7 @@ typedef list string;
 string *new_string(char *s);
 bool is_string(lispobj *s);
 bool equal_string(string *l, string *r);
+char *string_to_char(string *s);
 
 
 /* generic func */
@@ -76,21 +77,22 @@ environment *new_env();
 list *list_of_values(lispobj *exps, environment *env);
 lispobj *eval(lispobj *exp, environment *env);
 
-/* primitive procedures */
-typedef lispobj prim_proc;
-prim_proc *new_prim_proc(lispobj *(*p)(list *));
-int is_prim_proc(lispobj *obj);
-lispobj *apply_prim_proc(prim_proc *proc, list *arg);
-integer *proc_plus_integer(list *integers);
-lispobj *prim_car(lispobj *obj);
-lispobj *prim_cdr(lispobj *obj);
-
 /*boolean*/
 typedef lispobj boolean;
 bool is_boolean(lispobj* obj);
 boolean* new_boolean(bool b);
 bool equal_boolean(boolean *lhs, boolean *rhs);
 bool is_true(lispobj *obj);
+
+/* primitive procedures */
+typedef lispobj prim_proc;
+prim_proc *new_prim_proc(lispobj *(*p)(list *));
+int is_prim_proc(lispobj *obj);
+lispobj *apply_prim_proc(prim_proc *proc, list *arg);
+integer *proc_plus_integer(list *integers);
+lispobj *prim_car(lispobj *operands);
+lispobj *prim_cdr(lispobj *operands);
+boolean *prim_print(lispobj *operands);
 
 /* syntax */
 typedef lispobj syntax;
@@ -131,7 +133,7 @@ list *close_token(list *tokens, int count);
 list *read_listtokens(cell *head, cell *tail);
 bool print_cell(lispobj* obj, bool is_list_head);
 bool print_lispobj(lispobj* obj);
-bool print_result(lispobj *obj);
+bool print_sexp(lispobj *obj);
 bool print_tokens(list *l);
 bool get_current_exp(list *tokens, cell **tail);
 list *expand_readmacro(list *tokens);

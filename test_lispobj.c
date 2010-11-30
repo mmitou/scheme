@@ -83,13 +83,13 @@ int test_list()
 
    l = cons(c[0], cons(c[1], cons(c[2], NULL)));
 
-   print_result(c[0]);
+   print_sexp(c[0]);
    printf("\n");
-   print_result(c[1]);
+   print_sexp(c[1]);
    printf("\n");
-   print_result(c[2]);
+   print_sexp(c[2]);
    printf("\n");
-   print_result(l);
+   print_sexp(l);
    printf("\n");
 
    assert(is_list(l));
