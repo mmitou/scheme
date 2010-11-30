@@ -1,12 +1,20 @@
 以下の事だけできます。
 
 syntax:
-define defmacro lambda begin cond
+define defmacro lambda begin cond load
 
 primitive procedure:
-+ car cdr
++ car cdr print
 
 readmacro:
 ' ` , ,@
 
+コンパイル方法:
+make all
+
+replで実行する:
+./scheme
+
+fileを読み込んで実行する:
+./scheme ./filename.scm
 
