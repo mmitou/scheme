@@ -420,6 +420,7 @@ environment *new_env()
    symbol *quasiquote = new_symbol(readmacro_symbols[QUASIQUOTE]);
    symbol *symbol_cond = new_symbol("cond"); 
    symbol *symbol_print = new_symbol("print");
+   symbol *symbol_load = new_symbol("load");
 
    syntax *s_begin = new_syntax(syntax_begin);
    syntax *s_define = new_syntax(syntax_define);
@@ -429,6 +430,7 @@ environment *new_env()
    syntax *s_defmacro = new_syntax(syntax_defmacro);
    syntax *s_gequal = new_syntax(syntax_gequal);
    syntax *s_cond = new_syntax(syntax_cond);
+   syntax *s_load = new_syntax(syntax_load);
 
    prim_proc *p_plus = new_prim_proc(proc_plus_integer);
    prim_proc *p_car = new_prim_proc(prim_car);
@@ -448,7 +450,8 @@ environment *new_env()
       cons(symbol_gequal,
       cons(symbol_cond,
       cons(symbol_print,
-      NULL))))))))))));
+      cons(symbol_load,
+      NULL)))))))))))));
    
    list *vals =
       cons(s_begin,
@@ -463,7 +466,8 @@ environment *new_env()
       cons(s_gequal,
       cons(s_cond,
       cons(p_print,
-      NULL))))))))))));
+      cons(s_load,
+      NULL)))))))))))));
 
    return extend_env(vars, vals, NULL);
 }
@@ -726,6 +730,25 @@ boolean *syntax_gequal(list *operands, environment *env)
       return new_boolean(result);
    }
 }
+
+lispobj *syntax_load(list *operands, environment *env)
+{
+   if(operands == NULL)
+   {
+      return NULL;
+   }
+   if(list_length(operands) == 1)
+   {
+      return load_file(string_to_char(car(operands)), env);
+   }
+   else
+   {
+      load_file(string_to_char(car(operands)), env);
+      return syntax_load(cdr(operands), env);
+   }
+}
+
+
 
 lispobj *evaluate_quasiquote(lispobj *exp, environment *env)
 {
@@ -1366,7 +1389,6 @@ list *read_listtokens(list *tokens, cell *tail)
       {
          new_cdr = read_listtokens(cdr(tokens), tail);
       }
-
       obj = cons(new_car, new_cdr);
    }
    else
@@ -1590,7 +1612,7 @@ bool repl()
    return true;
 }
 
-lispobj* evaluate_file(char *filepath, environment *env)
+lispobj* load_file(char *filepath, environment *env)
 {
    FILE *fp = fopen(filepath, "r");
    char buf[BUFSIZ] = {0};
@@ -1624,7 +1646,7 @@ int main(int argc, char **argv)
 {
    if(argc == 2)
    {
-      evaluate_file(argv[1], new_env());
+      load_file(argv[1], new_env());
    }
    else
    {

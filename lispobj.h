@@ -108,8 +108,8 @@ lispobj *syntax_unquote_splicing(list *operands, environment *env);
 lispobj *syntax_quasiquote(list *operands, environment *env);
 lispobj *syntax_unquote(list *operands, environment *env);
 boolean *syntax_gequal(list *operands, environment *env);
-lispobj *syntax_cond(list *exp, environment *env);
-
+lispobj *syntax_cond(list *operands, environment *env);
+lispobj *syntax_load(list *operands, environment *env);
 
 /* lambda */
 typedef lispobj lambda;
@@ -145,5 +145,7 @@ macro *new_macro(list *arg, list *body);
 lispobj *eval_macro(macro *m, lispobj *operands, environment *env);
 macro *syntax_defmacro(list *exp, environment *env);
 
+/*load scheme*/
+lispobj* load_file(char *filepath, environment *env);
 
 #endif
